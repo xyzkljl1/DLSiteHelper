@@ -22,6 +22,7 @@ window.addEventListener("message", function (e) {
         ReplaceTitleItem();
         ReplaceRelatedItem();
         ReplaceRecommendAndSearchItem();
+        ReplacePushItem();
 
         //之后可能会变化需要重新replace的元素：
         //点击加入购物车后出现的推荐列表,列表一开始就存在但为空，列表显示后获得子项且子项不会变动
@@ -44,6 +45,12 @@ window.addEventListener("message", function (e) {
                 list_item.setAttribute("onload", "javascript:ReplaceRelatedItem("+id+")");
                 list_item.setAttribute("onresize", "javascript:ReplaceRelatedItem(" + id +")");
             }
+        }
+        //首页的pushlist，滑动时子项变化
+        {
+            var observer = new MutationObserver(function () { ReplacePushItem(); });
+            for (let list_item of document.getElementsByClassName("push_list"))
+                observer.observe(list_item, { childList: true });
         }
     } else if (e.data && e.data.cmd == 'markDone') {
         if (close_when_done)
@@ -105,25 +112,49 @@ function SetLabelDisplayFalse(item) {
     else
         item.setAttribute("style", value);
 }
-function SetLabelVisibleFalse(item) {
+function SetLiLabelVisible(item,enable) {
     //用dislpay:none会令滑块里display本来就不为none的元素数量不对，原因尚不清楚
     //只用于自己的visibility不变的标签
     var value = "visibility: hidden;";
-    if (item.hasAttribute("style")) {
-        var style = item.getAttribute("style");
-        style = style.replace(value, '') + value;
-        item.setAttribute("style", style);
+    if (!enable) {
+        if (item.hasAttribute("style")) {
+            var style = item.getAttribute("style");
+            style = style.replace(value, '') + value;
+            item.setAttribute("style", style);
+        }
+        else
+            item.setAttribute("style", value);
     }
     else
-        item.setAttribute("style",  value);
-}
-function SetLabelVisibleTrue(item) {
-    var value = "visibility: hidden;";
-    if (item.hasAttribute("style")) {
-        var style = item.getAttribute("style");
-        style = style.replace(value,'');
-        item.setAttribute("style", style);
+    {
+        if (item.hasAttribute("style")) {
+            var style = item.getAttribute("style");
+            style = style.replace(value, '');
+            item.setAttribute("style", style);
+        }
     }
+}
+
+function SetLiLabelWhite(top, enable) {
+    var value = "background-color:white;color: white;";
+    for (let tagname of ["a", "span"])
+        for (let item of top.getElementsByTagName(tagname))
+            if (!enable) {
+                if (item.hasAttribute("style")) {
+                    var style = item.getAttribute("style");
+                    style = style.replace(value, '') + value;
+                    item.setAttribute("style", style);
+                }
+                else
+                    item.setAttribute("style", value);
+            }
+            else {
+                if (item.hasAttribute("style")) {
+                    var style = item.getAttribute("style");
+                    style = style.replace(value, '');
+                    item.setAttribute("style", style);
+                }
+            }
 }
 
 //标题
@@ -138,6 +169,20 @@ function ReplaceTitleItem()
         }
 }
 
+
+function ReplacePushItem() {
+    for (let list of document.getElementsByClassName("push_list"))
+        for (let item of list.getElementsByTagName("li"))
+        {
+            var name_item = item.getElementsByClassName("work_name")[0].getElementsByTagName("a")[0];
+            if (name_item)
+            {
+                var id = GetFileName(name_item.getAttribute("href"));
+                SetLiLabelVisible(item, IsItemValid(id));
+            }
+        }
+}
+
 //src为空时替换整个页面中的元素，否则只替换src下的元素
 function ReplaceRelatedItem(src=null) {
     var array;
@@ -149,10 +194,8 @@ function ReplaceRelatedItem(src=null) {
     //只有部分元素,随页面变化
     for (let item of array) {
         var id = item.getAttribute("data-workno");
-        if (!IsItemValid(id))
-            SetLabelVisibleFalse(item.parentElement);
-        else
-            SetLabelVisibleTrue(item.parentElement);
+        SetLiLabelVisible(item.parentElement, IsItemValid(id));
+        //SetLiLabelWhite(item.parentElement, IsItemValid(id));
     }
 }
 
@@ -183,8 +226,16 @@ function ReplaceRecommendAndSearchItem() {
         var address = item.getElementsByClassName("work_name")[0].getElementsByTagName("a")[0].getAttribute("href");
         var id = GetFileName(address);
         if (!IsItemValid(id))
-            SetLabelVisibleFalse(item.parentElement);
+            SetLiLabelVisible(item.parentElement,false);
     }
+    //首页下方的worklist
+    for (let item of document.getElementsByClassName("n_worklist_item")) {
+        var address = item.getElementsByClassName("work_name")[0].getElementsByTagName("a")[0].getAttribute("href");
+        var id = GetFileName(address);
+        if (!IsItemValid(id))
+            item.setAttribute("hidden",true);
+    }
+
     //也购买过、也查看过、最近看过的作品
     //所有元素最初就存在,不会变更
     for (let item of document.getElementsByClassName("recommend_work_item")) {
