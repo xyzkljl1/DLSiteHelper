@@ -42,7 +42,7 @@ function injectCustomJs(jsPath)
 
 window.addEventListener("message", function(e)
 {
-    console.log('收到消息：', e.data);
+    //console.log('收到消息：', e.data);
     if (e.data && e.data.cmd == 'invoke') {
         eval('(' + e.data.code + ')');
     }

@@ -23,7 +23,7 @@ window.addEventListener("message", function (e) {
         ReplaceRelatedItem();
         ReplaceRecommendAndSearchItem();
         ReplacePushItem();
-
+        ReplaceRankItem();
         //之后可能会变化需要重新replace的元素：
         //点击加入购物车后出现的推荐列表,列表一开始就存在但为空，列表显示后获得子项且子项不会变动
         var MutationObserver = window.MutationObserver;
@@ -169,6 +169,23 @@ function ReplaceTitleItem()
         }
 }
 
+function ReplaceRankItem()
+{
+    //首页侧边栏的rank
+    //以开始就具有全部子项,点击名次选项卡时display变化，因此直接删掉是最好的
+    //固定有前30名，分别使用不同的class name
+    for (let list of document.getElementsByClassName("rank_content"))
+        for (var i = 1; i <= 30; i++)
+        {
+            var item=list.getElementsByClassName("rank" + i)[0];
+            if (item)
+            {
+                var id = GetFileName(item.getElementsByTagName("a")[0].getAttribute("href"));
+                if (!IsItemValid(id))
+                    item.parentElement.removeChild(item);
+            }
+        }
+}
 
 function ReplacePushItem() {
     for (let list of document.getElementsByClassName("push_list"))
