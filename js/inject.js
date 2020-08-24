@@ -17,17 +17,34 @@ window.addEventListener("message", function (e) {
             if (item.length > 0)
                 my_db.add(tmp[item]);
         console.log('Inject.js Got DB：' + my_db.size);
-        ReplaceAllItem();
-        //这几个滑块变更时需要重新判定
-        var same_voice_item = document.getElementById("__work_same_voice");
-        if (same_voice_item)
-            same_voice_item.setAttribute("onresize","javascript:ReplaceRelatedItem()");
-        var same_company_item = document.getElementById("__maker_works");
-        if (same_company_item)
-            same_company_item.setAttribute("onresize", "javascript:ReplaceRelatedItem()");
-        var same_series_item = document.getElementById("__work_same_series");
-        if (same_series_item)
-            same_series_item.setAttribute("onresize", "javascript:ReplaceRelatedItem()");
+
+        //此时立刻替换能替换的
+        ReplaceTitleItem();
+        ReplaceRelatedItem();
+        ReplaceRecommendAndSearchItem();
+
+        //之后可能会变化需要重新replace的元素：
+        //点击加入购物车后出现的推荐列表,列表一开始就存在但为空，列表显示后获得子项且子项不会变动
+        var MutationObserver = window.MutationObserver;
+        {
+            var list_item = document.getElementById("_recommend_box_viewsalesgenresaleshistory");
+            if (list_item) 
+            {
+                var observer = new MutationObserver(function () { ReplaceCartRecommendItem(); });
+                observer.observe(list_item, { childList: true });
+            }
+        }
+        //同社团/系列/声优作品列表,resize或者滑动时子项变化
+        //监听childList或attributes无效需要用onresize
+        //此时可能尚未加载完成(不知道为什么会这样)所以onload也要连接
+        for (let id of ["__work_same_voice", "__maker_works", "__work_same_series"])
+        {
+            var list_item = document.getElementById(id);
+            if (list_item) {
+                list_item.setAttribute("onload", "javascript:ReplaceRelatedItem("+id+")");
+                list_item.setAttribute("onresize", "javascript:ReplaceRelatedItem(" + id +")");
+            }
+        }
     } else if (e.data && e.data.cmd == 'markDone') {
         if (close_when_done)
             CloseWindow();
@@ -39,6 +56,10 @@ window.addEventListener("message", function (e) {
         }
     }
 }, false);
+
+function test() {
+    console.log("test triggered");
+}
 
 function MarkEliminated() {
     var id = GetFileName(window.location.href);
@@ -105,13 +126,6 @@ function SetLabelVisibleTrue(item) {
     }
 }
 
-
-function ReplaceAllItem() {
-    ReplaceTitleItem();
-    ReplaceRelatedItem();
-    ReplaceRecommendAndSearchItem();
-}
-
 //标题
 function ReplaceTitleItem()
 {
@@ -124,15 +138,33 @@ function ReplaceTitleItem()
         }
 }
 
-function ReplaceRelatedItem() {
+//src为空时替换整个页面中的元素，否则只替换src下的元素
+function ReplaceRelatedItem(src=null) {
+    var array;
+    if (src)
+        array = src.getElementsByClassName("work_ncol");
+    else
+        array = document.getElementsByClassName("work_ncol"); 
     //同系列、社团作品、同声优作品
     //只有部分元素,随页面变化
-    for (let item of document.getElementsByClassName("work_ncol")) {
+    for (let item of array) {
         var id = item.getAttribute("data-workno");
         if (!IsItemValid(id))
             SetLabelVisibleFalse(item.parentElement);
         else
             SetLabelVisibleTrue(item.parentElement);
+    }
+}
+
+function ReplaceCartRecommendItem() {
+    var list_item = document.getElementById("_recommend_box_viewsalesgenresaleshistory");
+    //点击加入购物车后弹出页面的列表
+    //格式上跟ReplaceRelatedItem的列表相同，可以用ReplaceRelatedItem替代
+    //但是由于这个列表的子项不会在滑动时变化，所以用ReplaceRecommendAndSearchItem的方式隐藏效果更好
+    for (let item of list_item.getElementsByClassName("work_ncol")) {
+        var id = item.getAttribute("data-workno");
+        if (!IsItemValid(id))
+            SetLabelDisplayFalse(item.parentElement);
     }
 }
 
