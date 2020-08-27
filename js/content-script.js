@@ -15,8 +15,9 @@ function initCustomPanel()
     if (/[RVJ]{1,2}[0-9]{1,6}/.test(id)) {
         var panel = document.createElement('div');
         panel.className = 'inject-panel';
+        panel.setAttribute("style", "z-index:9999;");
         panel.innerHTML = `
-		<div class="btn-area">
+		<div class="btn-area" id="DLHWorkInjectPanel">
 			<a href="javascript:MarkEliminated()">已阅</a><br>
 			<a href="javascript:MarkEliminatedAndClose()">已阅并关闭</a><br>
 		</div>
@@ -43,22 +44,15 @@ function injectCustomJs(jsPath)
 window.addEventListener("message", function(e)
 {
     //console.log('收到消息：', e.data);
-    if (e.data && e.data.cmd == 'invoke') {
+    if (e.data && e.data.cmd == 'invoke')
         eval('(' + e.data.code + ')');
-    }
-    else if (e.data && e.data.cmd == 'markEliminated') {
-        chrome.runtime.sendMessage({ cmd: e.data.cmd, code: e.data.code},
-            function (response) {         
-                window.postMessage({ cmd: 'markDone' });
-            });
-    }
-    else if (e.data && e.data.cmd == 'query') {
-        chrome.runtime.sendMessage({ cmd: e.data.cmd },
+    else if (e.data && ["query", "markEliminated", "markOverlap"].includes(e.data.cmd)) {
+        chrome.runtime.sendMessage({ cmd: e.data.cmd, code: e.data.code?e.data.code:"" },
             function (response) {
-                window.postMessage({ cmd: 'setData', code: response });
+                window.postMessage({ cmd: e.data.cmd + "Done", code: response });
             });
     }
-    else if (e.data && e.data.cmd == 'CloseTab') {
-        chrome.runtime.sendMessage({ cmd: e.data.cmd });
+    else if (e.data && ["CloseTab"].includes(e.data.cmd)) {
+        chrome.runtime.sendMessage({ cmd: e.data.cmd, code: e.data.code ? e.data.code : "" });
     }
 }, false);

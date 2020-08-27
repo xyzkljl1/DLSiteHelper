@@ -1,8 +1,12 @@
 // 通过postMessage调用content-script
 var my_db = new Set();
+var my_overlap_works =new Set();
 var close_when_done = false;
 window.onload = function () {
-    window.postMessage({ cmd: 'query' }, '*');
+    var id = GetFileName(window.location.href);
+    if (!/[RVJ]{1,2}[0-9]{3,6}/.test(id))
+        id = null;
+    window.postMessage({ cmd: 'query',code:id }, '*');
 };
 /*
 function invokeContentScript(code)
@@ -11,12 +15,14 @@ function invokeContentScript(code)
 }*/
 
 window.addEventListener("message", function (e) {
-    if (e.data && e.data.cmd == 'setData') {
-        var tmp = e.data.code.split(" ");
+    if (e.data && e.data.cmd == 'queryDone') {
+        var tmp = e.data.code["db"].split(" ");
         for (let item in tmp)
             if (item.length > 0)
                 my_db.add(tmp[item]);
-        console.log('Inject.js Got DB：' + my_db.size);
+        if (e.data.code["overlap"])
+            my_overlap_works = new Set(e.data.code["overlap"].split(" "));
+        console.log('Inject.js Got DB：' + my_db.size + " " + my_overlap_works.length);
 
         //此时立刻替换能替换的
         ReplaceTitleItem();
@@ -24,13 +30,13 @@ window.addEventListener("message", function (e) {
         ReplaceRecommendAndSearchItem();
         ReplacePushItem();
         ReplaceRankItem();
+        AddOverlapButtonInPanel();
         //之后可能会变化需要重新replace的元素：
         //点击加入购物车后出现的推荐列表,列表一开始就存在但为空，列表显示后获得子项且子项不会变动
         var MutationObserver = window.MutationObserver;
         {
             var list_item = document.getElementById("_recommend_box_viewsalesgenresaleshistory");
-            if (list_item) 
-            {
+            if (list_item) {
                 var observer = new MutationObserver(function () { ReplaceCartRecommendItem(); });
                 observer.observe(list_item, { childList: true });
             }
@@ -38,12 +44,11 @@ window.addEventListener("message", function (e) {
         //同社团/系列/声优作品列表,resize或者滑动时子项变化
         //监听childList或attributes无效需要用onresize
         //此时可能尚未加载完成(不知道为什么会这样)所以onload也要连接
-        for (let id of ["__work_same_voice", "__maker_works", "__work_same_series"])
-        {
+        for (let id of ["__work_same_voice", "__maker_works", "__work_same_series"]) {
             var list_item = document.getElementById(id);
             if (list_item) {
-                list_item.setAttribute("onload", "javascript:ReplaceRelatedItem("+id+")");
-                list_item.setAttribute("onresize", "javascript:ReplaceRelatedItem(" + id +")");
+                list_item.setAttribute("onload", "javascript:ReplaceRelatedItem(" + id + ")");
+                list_item.setAttribute("onresize", "javascript:ReplaceRelatedItem(" + id + ")");
             }
         }
         //首页的pushlist，滑动时子项变化
@@ -52,20 +57,33 @@ window.addEventListener("message", function (e) {
             for (let list_item of document.getElementsByClassName("push_list"))
                 observer.observe(list_item, { childList: true });
         }
-    } else if (e.data && e.data.cmd == 'markDone') {
+    }
+    else if (e.data && e.data.cmd == 'markEliminatedDone') {
         if (close_when_done)
             CloseWindow();
-        else
-        {
+        else {
             var id = GetFileName(window.location.href);
             my_db.add(id);
             ReplaceTitleItem();
         }
     }
+    else if (e.data && e.data.cmd == 'markOverlapDone') {
+        my_overlap_works.add(e.data.code);
+        AddOverlapButtonInPanel();
+    }
 }, false);
 
 function test() {
     console.log("test triggered");
+}
+
+function MarkOverlap(sub_id,duplex) {
+    var main_id = GetFileName(window.location.href);
+    window.postMessage({ cmd: 'markOverlap', code: [main_id, sub_id, duplex] }, '*');
+}
+function MarkOverlapDuplex(sub_id) {
+    var main_id = GetFileName(window.location.href);
+    window.postMessage({ cmd: 'MarkOverlapDuplex', code: [main_id, sub_id] }, '*');
 }
 
 function MarkEliminated() {
@@ -157,11 +175,48 @@ function SetLiLabelWhite(top, enable) {
             }
 }
 
+function AddOverlapButtonInPanel() {
+    var id = GetFileName(window.location.href);
+    var reg_exp = /[RVJ]{1,2}[0-9]{3,6}/g;
+    var panel = document.getElementById("DLHWorkInjectPanel");
+    if (reg_exp.test(id)&&panel)
+    {
+        while (panel.getElementsByClassName("myoverlapbtn")[0])
+        {
+            panel.removeChild(panel.getElementsByClassName("myoverlapbtn")[0]);
+            panel.removeChild(panel.getElementsByTagName("br")[0]);
+        }
+        var text_list = [];
+        var ret = new Set();
+        var area = document.getElementsByClassName("work_parts_area")[0];
+        if (area)
+            text_list.push(area.getElementsByTagName("p")[0].innerText);
+        area = document.getElementsByClassName("work_article work_story")[0];
+        if (area)
+            text_list.push(area.innerText);
+        for (let text of text_list)
+            if (reg_exp.test(text))
+                for (let sub_id of text.match(reg_exp))
+                    ret.add(sub_id);
+        if (ret.size > 1)
+            for (let sub_id of ret)
+                if (!my_overlap_works.has(sub_id))
+                    panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
+        else if (ret.size == 1) 
+            for (let sub_id of ret)
+                if (!my_overlap_works.has(sub_id))
+                {
+                    panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
+                    panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',1)">双向覆盖` + sub_id + `</a><br>`);
+                }        
+    }
+}
+
 //标题
 function ReplaceTitleItem()
 {
     var id = GetFileName(window.location.href);
-    if (/[RVJ]{1,2}[0-9]{1,6}/.test(id))
+    if (/[RVJ]{1,2}[0-9]{3,6}/.test(id))
         if (!IsItemValid(id)) {
             var tmp = document.getElementsByClassName("base_title_br clearfix")[0].getElementsByTagName("h1")[0];
             var title = tmp.getElementsByTagName("a")[0];
