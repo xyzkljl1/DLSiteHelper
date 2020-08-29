@@ -89,7 +89,7 @@ function MarkOverlapDuplex(sub_id) {
 
 function MarkEliminated() {
     if (IsItemValid(main_work_id))
-        window.postMessage({ cmd: 'markEliminated', code: id }, '*');
+        window.postMessage({ cmd: 'markEliminated', code: main_work_id }, '*');
 }
 
 function MarkEliminatedAndClose() {
