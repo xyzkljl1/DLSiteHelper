@@ -4,10 +4,12 @@ var my_overlap_works =new Set();
 var close_when_done = false;
 var main_work_id = null;
 var is_unreaded = false;
+var WORK_ID_REGULAR = /[RVBJ]{1,2}[0-9]{3,6}/;
+var WORK_ID_REGULAR_ALL = /[RVBJ]{1,2}[0-9]{3,6}/g;
 
 window.onload = function () {
     main_work_id = GetFileName(window.location.href);
-    if (!/[RVJ]{1,2}[0-9]{3,6}/.test(main_work_id))
+    if (!WORK_ID_REGULAR.test(main_work_id))
         main_work_id = null;
     window.postMessage({ cmd: 'query', code: main_work_id }, '*');
 };
@@ -68,6 +70,7 @@ window.addEventListener("message", function (e) {
             var id = GetFileName(window.location.href);
             my_db.add(id);
             ReplaceTitleItem();
+            RefreshPanel();
         }
     }
     else if (e.data && e.data.cmd == 'markOverlapDone') {
@@ -181,9 +184,10 @@ function SetLiLabelWhite(top, enable) {
 
 //商品页面的操作面板
 function RefreshPanel() {
-    var reg_exp = /[RVJ]{1,2}[0-9]{3,6}/g;
     var panel = document.getElementById("DLHWorkInjectPanel");
     if (main_work_id && panel && IsItemValid(main_work_id)) {
+
+        panel.parentElement.setAttribute("style", panel.parentElement.getAttribute("style").replace("display:none;", ''));
         while (panel.getElementsByClassName("myoverlapbtn")[0]) {
             panel.removeChild(panel.getElementsByClassName("myoverlapbtn")[0]);
             panel.removeChild(panel.getElementsByTagName("br")[0]);
@@ -197,22 +201,24 @@ function RefreshPanel() {
         if (area)
             text_list.push(area.innerText);
         for (let text of text_list)
-            if (reg_exp.test(text))
-                for (let sub_id of text.match(reg_exp))
+            if (WORK_ID_REGULAR_ALL.test(text))
+                for (let sub_id of text.match(WORK_ID_REGULAR_ALL))
                     ret.add(sub_id);
-        if (ret.size > 1)
+        if (ret.size > 1) {
             for (let sub_id of ret)
                 if (!my_overlap_works.has(sub_id))
                     panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
-                else if (ret.size == 1)
-                    for (let sub_id of ret)
-                        if (!my_overlap_works.has(sub_id)) {
-                            panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
-                            panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',1)">双向覆盖` + sub_id + `</a><br>`);
-                        }
+        }
+        else if (ret.size == 1)
+            for (let sub_id of ret)
+                if (!my_overlap_works.has(sub_id)) {
+                    panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
+                    panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',1)">双向覆盖` + sub_id + `</a><br>`);
+                }
     }
     else if (panel)
-        panel.parentElement.setAttribute("style", "display:none;");
+        panel.parentElement.setAttribute("style","display:none;");
+
 }
 
 //商品页面的标题
@@ -225,7 +231,6 @@ function ReplaceTitleItem()
             title.innerHTML = "<s>" + title.innerHTML + "</s>";
         }
 }
-
 
 //首页侧边栏的rank
 function ReplaceRankItem()

@@ -1,4 +1,6 @@
-﻿console.log('ContentScript Begin');
+﻿var WORK_ID_REGULAR = /[RVBJ]{1,2}[0-9]{3,6}/;
+var WORK_ID_REGULAR_ALL = /[RVBJ]{1,2}[0-9]{3,6}/g;
+console.log('ContentScript Begin');
 
 // 注意，必须设置了run_at=document_start 此段代码才会生效
 document.addEventListener('DOMContentLoaded', DoInject);
@@ -20,10 +22,10 @@ function GetFileName(path) {
 function initCustomPanel()
 {
     var id = GetFileName(window.location.href);
-    if (/[RVJ]{1,2}[0-9]{1,6}/.test(id)) {
+    if (WORK_ID_REGULAR.test(id)) {
         var panel = document.createElement('div');
         panel.className = 'inject-panel';
-        panel.setAttribute("style", "z-index:9999;");
+        panel.setAttribute("style", "z-index:9999;display:none;");
         panel.innerHTML = `
 		<div class="btn-area" id="DLHWorkInjectPanel">
 			<a href="javascript:MarkEliminated()">已阅</a><br>

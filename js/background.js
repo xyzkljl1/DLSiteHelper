@@ -2,6 +2,8 @@ var invalid_items = new Set();
 var overlap_items = null;
 var cart_items = new Set();
 var bought_items = new Set();
+var WORK_ID_REGULAR = /[RVBJ]{1,2}[0-9]{3,6}/;
+var WORK_ID_REGULAR_ALL = /[RVBJ]{1,2}[0-9]{3,6}/g;
 
 $.ajax({
     url: 'http://127.0.0.1:4567',
@@ -126,7 +128,7 @@ function UpdateCartItems() {
                 var a = dt.getElementsByTagName("a")[0];
                 if (a) {
                     var id = GetFileName(a.href);
-                    if (/[RVJ]{1,2}[0-9]{3,6}/.test(id))
+                    if (WORK_ID_REGULAR.test(id))
                         cart_items.add(id);
                 }
             }
