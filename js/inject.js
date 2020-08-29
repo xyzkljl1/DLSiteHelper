@@ -45,6 +45,13 @@ window.addEventListener("message", function (e) {
                 var observer = new MutationObserver(function () { ReplaceCartRecommendItem(); NoticeUpdateCart(); });
                 observer.observe(list_item, { childList: true });
             }
+        }        
+        {//活动页面的搜索结果在点击左侧过滤器时不会刷新页面而是直接换掉整个列表,需要监听容器
+            var container = document.getElementsByClassName("_search_result_container")[0];
+            if (container) {
+                var observer = new MutationObserver(function () { ReplaceRecommendAndSearchItem();  });
+                observer.observe(container, { childList: true });
+            }
         }
         //同社团/系列/声优作品列表,resize或者滑动时子项变化
         //监听childList或attributes无效需要用onresize

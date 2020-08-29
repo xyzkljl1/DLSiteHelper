@@ -116,6 +116,7 @@ function UpdateCartItems() {
         path: '/maniax/cart'
 
     }).done(function (result) {
+        //把乱七八糟的变成文本，省的报错
         result = result.replace(/<script/g, "<a");
         result = result.replace(/<\/script/g, "</a");
         result = result.replace(/<link/g, "<a");
@@ -151,7 +152,7 @@ function UpdateBoughtItems() {
     });
 }
 
-
+//测试用
 function t() {
     UpdateBoughtItems();
 }
