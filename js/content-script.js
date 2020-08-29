@@ -1,4 +1,4 @@
-﻿console.log('这是content script!');
+﻿console.log('ContentScript Begin');
 
 // 注意，必须设置了run_at=document_start 此段代码才会生效
 document.addEventListener('DOMContentLoaded', DoInject);
@@ -8,10 +8,18 @@ function DoInject(){
     initCustomPanel();
 }
 
+//有xxx/RJxxx.html和xxx/RJxxx两种格式的网址
+//同样的代码在不同的js里都出现了，目前不知道有什么好的方法解决
+function GetFileName(path) {
+    var ret = path.substring(path.lastIndexOf("/") + 1);
+    if (ret.lastIndexOf(".") > 0)
+        ret = ret.substring(0, ret.lastIndexOf("."));
+    return ret;
+}
+
 function initCustomPanel()
 {
-    var path = window.location.href;
-    var id = path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf("."));
+    var id = GetFileName(window.location.href);
     if (/[RVJ]{1,2}[0-9]{1,6}/.test(id)) {
         var panel = document.createElement('div');
         panel.className = 'inject-panel';

@@ -112,9 +112,14 @@ function IsItemValid(id) {
     return true;
 }
 
+//有xxx/RJxxx.html和xxx/RJxxx两种格式的网址
+//同样的代码在不同的js里都出现了，目前不知道有什么好的方法解决
 function GetFileName(path)
 {
-    return path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf("."));
+    var ret = path.substring(path.lastIndexOf("/") + 1);
+    if (ret.lastIndexOf(".") > 0)
+        ret = ret.substring(0, ret.lastIndexOf("."));
+    return ret;
 }
 
 function SetLabelDisplayFalse(item) {
@@ -174,6 +179,7 @@ function SetLiLabelWhite(top, enable) {
             }
 }
 
+//商品页面的操作面板
 function RefreshPanel() {
     var reg_exp = /[RVJ]{1,2}[0-9]{3,6}/g;
     var panel = document.getElementById("DLHWorkInjectPanel");
@@ -209,7 +215,7 @@ function RefreshPanel() {
         panel.parentElement.setAttribute("style", "display:none;");
 }
 
-//标题
+//商品页面的标题
 function ReplaceTitleItem()
 {
     if (main_work_id)
@@ -220,9 +226,10 @@ function ReplaceTitleItem()
         }
 }
 
+
+//首页侧边栏的rank
 function ReplaceRankItem()
 {
-    //首页侧边栏的rank
     //以开始就具有全部子项,点击名次选项卡时display变化，因此直接删掉是最好的
     //固定有前30名，分别使用不同的class name
     for (let list of document.getElementsByClassName("rank_content"))
@@ -238,6 +245,7 @@ function ReplaceRankItem()
         }
 }
 
+//首页上方的推送列表
 function ReplacePushItem() {
     for (let list of document.getElementsByClassName("push_list"))
         for (let item of list.getElementsByTagName("li"))
@@ -251,6 +259,7 @@ function ReplacePushItem() {
         }
 }
 
+//同系列、社团作品、同声优作品
 //src为空时替换整个页面中的元素，否则只替换src下的元素
 function ReplaceRelatedItem(src=null) {
     var array;
@@ -258,7 +267,7 @@ function ReplaceRelatedItem(src=null) {
         array = src.getElementsByClassName("work_ncol");
     else
         array = document.getElementsByClassName("work_ncol"); 
-    //同系列、社团作品、同声优作品
+
     //只有部分元素,随页面变化
     for (let item of array) {
         var id = item.getAttribute("data-workno");
@@ -267,9 +276,9 @@ function ReplaceRelatedItem(src=null) {
     }
 }
 
+//点击加入购物车后弹出页面的列表
 function ReplaceCartRecommendItem() {
     var list_item = document.getElementById("_recommend_box_viewsalesgenresaleshistory");
-    //点击加入购物车后弹出页面的列表
     //格式上跟ReplaceRelatedItem的列表相同，可以用ReplaceRelatedItem替代
     //但是由于这个列表的子项不会在滑动时变化，所以用ReplaceRecommendAndSearchItem的方式隐藏效果更好
     for (let item of list_item.getElementsByClassName("work_ncol")) {
@@ -279,6 +288,7 @@ function ReplaceCartRecommendItem() {
     }
 }
 
+//搜索列表，首页下方的worklist，也购买过、也查看过、最近看过的作品
 function ReplaceRecommendAndSearchItem() {
     //搜索列表，单列
     for (let item of document.getElementsByClassName("work_1col"))

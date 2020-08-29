@@ -29,6 +29,15 @@ $.ajax({
 UpdateCartItems();
 UpdateBoughtItems();
 
+//有xxx/RJxxx.html和xxx/RJxxx两种格式的网址
+//同样的代码在不同的js里都出现了，目前不知道有什么好的方法解决
+function GetFileName(path) {
+    var ret = path.substring(path.lastIndexOf("/") + 1);
+    if (ret.lastIndexOf(".") > 0)
+        ret = ret.substring(0, ret.lastIndexOf("."));
+    return ret;
+}
+
 //右键菜单
 var top_menu=chrome.contextMenus.create({title: "My DLSiteHelper"});
 chrome.contextMenus.create({
@@ -116,8 +125,7 @@ function UpdateCartItems() {
             for (let dt of cart.getElementsByClassName("work_name")) {
                 var a = dt.getElementsByTagName("a")[0];
                 if (a) {
-                    var path = a.href;
-                    var id = path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf("."));
+                    var id = GetFileName(a.href);
                     if (/[RVJ]{1,2}[0-9]{3,6}/.test(id))
                         cart_items.add(id);
                 }
