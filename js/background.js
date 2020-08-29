@@ -67,8 +67,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             tmp = tmp + item + " ";
         for (var item of bought_items)
             tmp = tmp + item + " ";
-        console.log(cart_items);
-        console.log(tmp);
         if (request.code && overlap_items[request.code])
             sendResponse({ "db": tmp, "overlap": Array.from(overlap_items[request.code]).join(" ") });
         else
@@ -95,7 +93,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         $.ajax({
             url: 'http://127.0.0.1:4567',
             type: 'GET',
-            data: "markOverlap&main="+request.code[0]+"&sub="+request.code[1]+"&duplex="+request.code[2],
+            data: "markOverlap&main=" + request.code[0] + "&sub=" + request.code[1] + "&duplex=" + request.code[2],
             async: false,//异步执行的话SendResponse会失效
             timeout: 2000
         }).success(function (result) {
@@ -105,6 +103,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 overlap_items[request.code[1]].add(request.code[0]);
             sendResponse(request.code[1]);
         });
+    }
+    else if (request.cmd == "updateCart") {
+        UpdateCartItems();
     }
 });
 

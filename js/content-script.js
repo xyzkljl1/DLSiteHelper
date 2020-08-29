@@ -62,7 +62,7 @@ window.addEventListener("message", function(e)
                 window.postMessage({ cmd: e.data.cmd + "Done", code: response });
             });
     }
-    else if (e.data && ["CloseTab"].includes(e.data.cmd)) {
+    else if (e.data && ["CloseTab","updateCart"].includes(e.data.cmd)) {
         chrome.runtime.sendMessage({ cmd: e.data.cmd, code: e.data.code ? e.data.code : "" });
     }
 }, false);

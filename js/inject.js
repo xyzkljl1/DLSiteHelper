@@ -42,7 +42,7 @@ window.addEventListener("message", function (e) {
         {
             var list_item = document.getElementById("_recommend_box_viewsalesgenresaleshistory");
             if (list_item) {
-                var observer = new MutationObserver(function () { ReplaceCartRecommendItem(); });
+                var observer = new MutationObserver(function () { ReplaceCartRecommendItem(); NoticeUpdateCart(); });
                 observer.observe(list_item, { childList: true });
             }
         }
@@ -83,18 +83,20 @@ function test() {
     console.log("test triggered");
 }
 
+function NoticeUpdateCart() {
+    window.postMessage({ cmd: 'updateCart', code:"" }, '*');
+}
+
 function MarkOverlap(sub_id,duplex) {
     window.postMessage({ cmd: 'markOverlap', code: [main_work_id, sub_id, duplex] }, '*');
 }
 function MarkOverlapDuplex(sub_id) {
     window.postMessage({ cmd: 'MarkOverlapDuplex', code: [main_work_id, sub_id] }, '*');
 }
-
 function MarkEliminated() {
     if (IsItemValid(main_work_id))
         window.postMessage({ cmd: 'markEliminated', code: main_work_id }, '*');
 }
-
 function MarkEliminatedAndClose() {
     close_when_done = true;
     if (IsItemValid(main_work_id))
@@ -159,7 +161,6 @@ function SetLiLabelVisible(item,enable) {
         }
     }
 }
-
 function SetLiLabelWhite(top, enable) {
     var value = "background-color:white;color: white;";
     for (let tagname of ["a", "span"])
