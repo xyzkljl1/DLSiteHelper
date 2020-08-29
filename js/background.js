@@ -1,5 +1,6 @@
 var invalid_items = new Set();
 var overlap_items = null;
+var cart_items =new Set();
 
 $.ajax({
     url: 'http://127.0.0.1:4567',
@@ -24,6 +25,7 @@ $.ajax({
     console.log("DB Sync Done 2,Record:", Object.keys(overlap_items).length);
 });
 
+UpdateCartItems();
 
 //右键菜单
 var top_menu=chrome.contextMenus.create({title: "My DLSiteHelper"});
@@ -48,6 +50,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         var tmp = "";
         for (var item of invalid_items)
             tmp = tmp + item + " ";
+        for (var item of cart_items)
+            tmp = tmp + item + " ";
+        console.log(cart_items);
+        console.log(tmp);
         if (request.code && overlap_items[request.code])
             sendResponse({ "db": tmp, "overlap": Array.from(overlap_items[request.code]).join(" ") });
         else
@@ -86,3 +92,32 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         });
     }
 });
+
+function UpdateCartItems() {
+    $.ajax({
+        url: 'https://www.dlsite.com/maniax/cart',
+        type: 'GET',
+        path: '/maniax/cart'
+
+    }).done(function (result) {
+        result = result.replace(/<script/g, "<a");
+        result = result.replace(/<\/script/g, "</a");
+        result = result.replace(/<link/g, "<a");
+        result = result.replace(/<\/link"/g, "</a");
+        result = result.replace(/<img/g, "<a");
+        result = result.replace(/<\/img"/g, "</a");
+        $('#tmp_area').append(jQuery.parseHTML(result));
+        var cart = document.getElementById("tmp_area").getElementsByClassName("cart_list")[0];
+        if (cart && cart.getElementsByClassName("work_name"))
+            for (let dt of cart.getElementsByClassName("work_name")) {
+                var a = dt.getElementsByTagName("a")[0];
+                if (a) {
+                    var path = a.href;
+                    var id = path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf("."));
+                    if (/[RVJ]{1,2}[0-9]{3,6}/.test(id))
+                        cart_items.add(id);
+                }
+            }
+        console.log("Cart Info Updated",cart_items.size);
+    });
+}

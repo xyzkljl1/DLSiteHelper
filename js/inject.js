@@ -2,11 +2,14 @@
 var my_db = new Set();
 var my_overlap_works =new Set();
 var close_when_done = false;
+var main_work_id = null;
+var is_unreaded = false;
+
 window.onload = function () {
-    var id = GetFileName(window.location.href);
-    if (!/[RVJ]{1,2}[0-9]{3,6}/.test(id))
-        id = null;
-    window.postMessage({ cmd: 'query',code:id }, '*');
+    main_work_id = GetFileName(window.location.href);
+    if (!/[RVJ]{1,2}[0-9]{3,6}/.test(main_work_id))
+        main_work_id = null;
+    window.postMessage({ cmd: 'query', code: main_work_id }, '*');
 };
 /*
 function invokeContentScript(code)
@@ -22,7 +25,7 @@ window.addEventListener("message", function (e) {
                 my_db.add(tmp[item]);
         if (e.data.code["overlap"])
             my_overlap_works = new Set(e.data.code["overlap"].split(" "));
-        console.log('Inject.js Got DB：' + my_db.size + " " + my_overlap_works.length);
+        console.log('Inject.js Got DB：' + my_db.size + " " + my_overlap_works.size);
 
         //此时立刻替换能替换的
         ReplaceTitleItem();
@@ -30,7 +33,7 @@ window.addEventListener("message", function (e) {
         ReplaceRecommendAndSearchItem();
         ReplacePushItem();
         ReplaceRankItem();
-        AddOverlapButtonInPanel();
+        RefreshPanel();
         //之后可能会变化需要重新replace的元素：
         //点击加入购物车后出现的推荐列表,列表一开始就存在但为空，列表显示后获得子项且子项不会变动
         var MutationObserver = window.MutationObserver;
@@ -69,7 +72,7 @@ window.addEventListener("message", function (e) {
     }
     else if (e.data && e.data.cmd == 'markOverlapDone') {
         my_overlap_works.add(e.data.code);
-        AddOverlapButtonInPanel();
+        RefreshPanel();
     }
 }, false);
 
@@ -78,25 +81,21 @@ function test() {
 }
 
 function MarkOverlap(sub_id,duplex) {
-    var main_id = GetFileName(window.location.href);
-    window.postMessage({ cmd: 'markOverlap', code: [main_id, sub_id, duplex] }, '*');
+    window.postMessage({ cmd: 'markOverlap', code: [main_work_id, sub_id, duplex] }, '*');
 }
 function MarkOverlapDuplex(sub_id) {
-    var main_id = GetFileName(window.location.href);
-    window.postMessage({ cmd: 'MarkOverlapDuplex', code: [main_id, sub_id] }, '*');
+    window.postMessage({ cmd: 'MarkOverlapDuplex', code: [main_work_id, sub_id] }, '*');
 }
 
 function MarkEliminated() {
-    var id = GetFileName(window.location.href);
-    if (IsItemValid(id))
+    if (IsItemValid(main_work_id))
         window.postMessage({ cmd: 'markEliminated', code: id }, '*');
 }
 
 function MarkEliminatedAndClose() {
     close_when_done = true;
-    var id = GetFileName(window.location.href);
-    if (IsItemValid(id))
-        window.postMessage({ cmd: 'markEliminated', code: id }, '*');
+    if (IsItemValid(main_work_id))
+        window.postMessage({ cmd: 'markEliminated', code: main_work_id }, '*');
     else
         CloseWindow();
 }
@@ -175,14 +174,11 @@ function SetLiLabelWhite(top, enable) {
             }
 }
 
-function AddOverlapButtonInPanel() {
-    var id = GetFileName(window.location.href);
+function RefreshPanel() {
     var reg_exp = /[RVJ]{1,2}[0-9]{3,6}/g;
     var panel = document.getElementById("DLHWorkInjectPanel");
-    if (reg_exp.test(id)&&panel)
-    {
-        while (panel.getElementsByClassName("myoverlapbtn")[0])
-        {
+    if (main_work_id && panel && IsItemValid(main_work_id)) {
+        while (panel.getElementsByClassName("myoverlapbtn")[0]) {
             panel.removeChild(panel.getElementsByClassName("myoverlapbtn")[0]);
             panel.removeChild(panel.getElementsByTagName("br")[0]);
         }
@@ -202,22 +198,22 @@ function AddOverlapButtonInPanel() {
             for (let sub_id of ret)
                 if (!my_overlap_works.has(sub_id))
                     panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
-        else if (ret.size == 1) 
-            for (let sub_id of ret)
-                if (!my_overlap_works.has(sub_id))
-                {
-                    panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
-                    panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',1)">双向覆盖` + sub_id + `</a><br>`);
-                }        
+                else if (ret.size == 1)
+                    for (let sub_id of ret)
+                        if (!my_overlap_works.has(sub_id)) {
+                            panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
+                            panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',1)">双向覆盖` + sub_id + `</a><br>`);
+                        }
     }
+    else if (panel)
+        panel.parentElement.setAttribute("style", "display:none;");
 }
 
 //标题
 function ReplaceTitleItem()
 {
-    var id = GetFileName(window.location.href);
-    if (/[RVJ]{1,2}[0-9]{3,6}/.test(id))
-        if (!IsItemValid(id)) {
+    if (main_work_id)
+        if (!IsItemValid(main_work_id)) {
             var tmp = document.getElementsByClassName("base_title_br clearfix")[0].getElementsByTagName("h1")[0];
             var title = tmp.getElementsByTagName("a")[0];
             title.innerHTML = "<s>" + title.innerHTML + "</s>";
