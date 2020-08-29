@@ -1,6 +1,7 @@
 var invalid_items = new Set();
 var overlap_items = null;
-var cart_items =new Set();
+var cart_items = new Set();
+var bought_items = new Set();
 
 $.ajax({
     url: 'http://127.0.0.1:4567',
@@ -26,6 +27,7 @@ $.ajax({
 });
 
 UpdateCartItems();
+UpdateBoughtItems();
 
 //右键菜单
 var top_menu=chrome.contextMenus.create({title: "My DLSiteHelper"});
@@ -51,6 +53,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         for (var item of invalid_items)
             tmp = tmp + item + " ";
         for (var item of cart_items)
+            tmp = tmp + item + " ";
+        for (var item of bought_items)
             tmp = tmp + item + " ";
         console.log(cart_items);
         console.log(tmp);
@@ -120,4 +124,23 @@ function UpdateCartItems() {
             }
         console.log("Cart Info Updated",cart_items.size);
     });
+}
+
+function UpdateBoughtItems() {
+    $.ajax({
+        url: 'https://ssl.dlsite.com/maniax/load/bought/product',
+        type: 'GET',
+        path: '/maniax/cart'
+
+    }).done(function (result) {
+        var obj = JSON.parse(result);
+        for (let work of obj["boughts"])
+            bought_items.add(work);
+        console.log("Bought Info Updated", bought_items.size);
+    });
+}
+
+
+function t() {
+    UpdateBoughtItems();
 }
