@@ -37,7 +37,7 @@ window.addEventListener("message", function (e) {
         RefreshPanel();
 
         //同社团/系列/声优作品列表,resize或者滑动时子项变化
-        //监听childList或attributes无效需要用onresize，此时可能尚未加载完成(不知道为什么会这样)所以onload也要连接
+        //监听childList或attributes无效需要用onresize，此时可能尚未加载完成(不知道为什么)所以onload也要连接,但仍然有时初始状态没替换掉，不知道怎么解决
         //_recommend_box_viewannouncegenresaleshistory是未发售作品页面下方的"也查看了以下作品"，一样在滑动时子项变化
         /*注:
          * 总体来说：
@@ -299,8 +299,7 @@ function ReplacePushItem() {
 }
 
 //同系列、社团作品、同声优作品
-//src为空时替换整个页面中的元素，否则只替换src下的元素
-function ReplaceRelatedItem(src=null) {
+function ReplaceRelatedItem(src) {
     var array = src.getElementsByClassName("work_ncol");
     //只有部分元素,随页面变化
     for (let item of array) {

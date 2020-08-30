@@ -29,7 +29,7 @@ $.ajax({
 });
 
 UpdateCartItems();
-UpdateBoughtItems();
+UpdateBoughtItems(false);
 
 //有xxx/RJxxx.html和xxx/RJxxx两种格式的网址
 //同样的代码在不同的js里都出现了，目前不知道有什么好的方法解决
@@ -45,27 +45,7 @@ var top_menu=chrome.contextMenus.create({title: "My DLSiteHelper"});
 chrome.contextMenus.create({
     title: "下载全部",
     parentId: top_menu,
-    onclick: function () {
-        //先下载一次刷新cookie?不知道有没有用
-        $.ajax({
-            url: 'https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html',
-            type: 'HEAD'
-        }).done(function (result) {
-            chrome.cookies.getAll({ "url": "https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html" }, function (cookies) {
-                var ret = "";
-                for (let cookie of cookies)
-                    ret += cookie.name + "=" + cookie.value + "; ";
-                console.log(ret);
-                $.ajax({
-                    url: 'http://127.0.0.1:4567?Download',
-                    type: 'POST',
-                    data: ret
-                }).done(function (result) {
-                    console.log("Download Begin " + result);
-                });
-            });
-        });
-    }
+    onclick: function () { UpdateBoughtItems(true);}
 });
 
 // 监听来自content-script的消息
@@ -150,30 +130,60 @@ function UpdateCartItems() {
     });
 }
 
-function UpdateBoughtItems() {
+function UpdateBoughtItems(need_download) {
     $.ajax({
         url: 'https://ssl.dlsite.com/maniax/load/bought/product',
         type: 'GET',
         path: '/maniax/cart'
-
     }).done(function (result) {
+        //从网站获取数据
         var obj = JSON.parse(result);
         var tmp = "";
-        for (let work of obj["boughts"]) {
+        for (let work of obj["boughts"]){
             bought_items.add(work);
             tmp += work + " ";
         }
         console.log("Local Bought Items Updated", bought_items.size);
-        $.ajax({
-            url: 'http://127.0.0.1:4567/?UpdateBoughtItems',
-            type: 'POST',
-            data: tmp
-        }).success(function (result) {
-            console.log("Server Bought Items Updated", bought_items.size);
-        });
+        //更新到本地server
+        if (!need_download)
+            $.ajax({
+                url: 'http://127.0.0.1:4567/?UpdateBoughtItems',
+                type: 'POST',
+                data: tmp
+            }).success(function (result) {
+                console.log("Server Bought Items Updated", bought_items.size);
+                });
+        else
+            $.ajax({
+                url: 'http://127.0.0.1:4567/?UpdateBoughtItems',
+                type: 'POST',
+                data: tmp
+            }).success(function (result) {
+                StartDownload();
+                });
     });
 }
 
+function StartDownload() {
+    //先下载一次刷新cookie?不知道有没有用
+    $.ajax({
+        url: 'https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html',
+        type: 'HEAD'
+    }).done(function (result) {
+        chrome.cookies.getAll({ "url": "https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html" }, function (cookies) {
+            var ret = "";
+            for (let cookie of cookies)
+                ret += cookie.name + "=" + cookie.value + "; ";
+            $.ajax({
+                url: 'http://127.0.0.1:4567?Download',
+                type: 'POST',
+                data: ret
+            }).done(function (result) {
+                console.log("Download Begin " + result);
+            });
+        });
+    });
+}
 //测试用
 function t() {
     UpdateBoughtItems();
