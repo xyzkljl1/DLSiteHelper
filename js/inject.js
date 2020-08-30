@@ -87,7 +87,6 @@ window.addEventListener("message", function (e) {
 }, false);
 
 function test() {
-    console.log("test triggered");
 }
 
 function NoticeUpdateCart() {
@@ -301,9 +300,9 @@ function ReplaceCartRecommendItem() {
     }
 }
 
-//搜索列表，首页下方的worklist，也购买过、也查看过、最近看过的作品
+//搜索结果/社团/活动列表，首页下方的worklist，也购买过、也查看过、最近看过的作品
 function ReplaceRecommendAndSearchItem() {
-    //搜索列表，单列
+    //单列搜索结果列表/社团商品列表/活动商品列表，社团发售预告列表
     for (let item of document.getElementsByClassName("work_1col"))
     {
         var address = item.getElementsByClassName("work_name")[0].getElementsByTagName("a")[0].getAttribute("href");
@@ -311,13 +310,13 @@ function ReplaceRecommendAndSearchItem() {
         if (!IsItemValid(id))
             item.parentElement.parentElement.setAttribute("hidden", true);
     }
-    //搜索列表，方阵
+    //方阵搜索结果列表/社团商品列表/活动商品列表
     for (let item of document.getElementsByClassName("work_img_main"))
     {
         var address = item.getElementsByClassName("work_name")[0].getElementsByTagName("a")[0].getAttribute("href");
         var id = GetFileName(address);
         if (!IsItemValid(id))
-            SetLiLabelVisible(item.parentElement,false);
+            SetLabelDisplayFalse(item.parentElement);
     }
     //首页下方的worklist
     for (let item of document.getElementsByClassName("n_worklist_item")) {

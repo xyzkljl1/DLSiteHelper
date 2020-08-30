@@ -46,12 +46,24 @@ chrome.contextMenus.create({
     title: "下载全部",
     parentId: top_menu,
     onclick: function () {
+        //先下载一次刷新cookie?不知道有没有用
         $.ajax({
-            url: 'http://127.0.0.1:4567',
-            type: 'GET',
-            data: "Download"
+            url: 'https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html',
+            type: 'HEAD'
         }).done(function (result) {
-            console.log("Download Begin "+result);
+            chrome.cookies.getAll({ "url": "https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html" }, function (cookies) {
+                var ret = "";
+                for (let cookie of cookies)
+                    ret += cookie.name + "=" + cookie.value + "; ";
+                console.log(ret);
+                $.ajax({
+                    url: 'http://127.0.0.1:4567?Download',
+                    type: 'POST',
+                    data: ret
+                }).done(function (result) {
+                    console.log("Download Begin " + result);
+                });
+            });
         });
     }
 });
@@ -146,9 +158,19 @@ function UpdateBoughtItems() {
 
     }).done(function (result) {
         var obj = JSON.parse(result);
-        for (let work of obj["boughts"])
+        var tmp = "";
+        for (let work of obj["boughts"]) {
             bought_items.add(work);
-        console.log("Bought Info Updated", bought_items.size);
+            tmp += work + " ";
+        }
+        console.log("Local Bought Items Updated", bought_items.size);
+        $.ajax({
+            url: 'http://127.0.0.1:4567/?UpdateBoughtItems',
+            type: 'POST',
+            data: tmp
+        }).success(function (result) {
+            console.log("Server Bought Items Updated", bought_items.size);
+        });
     });
 }
 
