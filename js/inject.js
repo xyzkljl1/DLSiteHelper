@@ -31,11 +31,33 @@ window.addEventListener("message", function (e) {
 
         //此时立刻替换能替换的
         ReplaceTitleItem();
-        ReplaceRelatedItem();
         ReplaceRecommendAndSearchItem();
         ReplacePushItem();
         ReplaceRankItem();
         RefreshPanel();
+
+        //同社团/系列/声优作品列表,resize或者滑动时子项变化
+        //监听childList或attributes无效需要用onresize，此时可能尚未加载完成(不知道为什么会这样)所以onload也要连接
+        //_recommend_box_viewannouncegenresaleshistory是未发售作品页面下方的"也查看了以下作品"，一样在滑动时子项变化
+        /*注:
+         * 总体来说：
+         * 同社团/系列/声优作品，为关联作品，格式一致，子项浮动
+         * 也查看/也购买/最近看过，即推荐作品，格式一致，子项固定
+         但同样是作品页面下方的"也查看了以下作品"
+         已发售作品下方的，子项固定，格式同推荐列表，没有id
+         未发售作品下方的，子项浮动，格式同关联列表，id是_recommend_box_viewannouncegenresaleshistory
+         而加入购物车弹出的，子项固定，但格式同关联列表，id为_recommend_box_viewsalesgenresaleshistory，跟前者对应
+
+         也不知道是哪个傻逼写的代码
+        */
+        for (let id of ["__work_same_voice", "__maker_works", "__work_same_series","_recommend_box_viewannouncegenresaleshistory"]) {
+            var list_item = document.getElementById(id);
+            if (list_item) {
+                ReplaceRelatedItem(list_item);
+                list_item.setAttribute("onload", "javascript:ReplaceRelatedItem(" + id + ")");
+                list_item.setAttribute("onresize", "javascript:ReplaceRelatedItem(" + id + ")");
+            }
+        }
         //之后可能会变化需要重新replace的元素：
         //点击加入购物车后出现的推荐列表,列表一开始就存在但为空，列表显示后获得子项且子项不会变动
         var MutationObserver = window.MutationObserver;
@@ -51,16 +73,6 @@ window.addEventListener("message", function (e) {
             if (container) {
                 var observer = new MutationObserver(function () { ReplaceRecommendAndSearchItem();  });
                 observer.observe(container, { childList: true });
-            }
-        }
-        //同社团/系列/声优作品列表,resize或者滑动时子项变化
-        //监听childList或attributes无效需要用onresize
-        //此时可能尚未加载完成(不知道为什么会这样)所以onload也要连接
-        for (let id of ["__work_same_voice", "__maker_works", "__work_same_series"]) {
-            var list_item = document.getElementById(id);
-            if (list_item) {
-                list_item.setAttribute("onload", "javascript:ReplaceRelatedItem(" + id + ")");
-                list_item.setAttribute("onresize", "javascript:ReplaceRelatedItem(" + id + ")");
             }
         }
         //首页的pushlist，滑动时子项变化
@@ -192,9 +204,16 @@ function SetLiLabelWhite(top, enable) {
 //商品页面的操作面板
 function RefreshPanel() {
     var panel = document.getElementById("DLHWorkInjectPanel");
-    if (main_work_id && panel && IsItemValid(main_work_id)) {
+    if (main_work_id && panel) {
+        var need_show_panel = false;
+        for (let item of panel.getElementsByClassName("mymarkbtn"))
+            if (IsItemValid(main_work_id)) {
+                need_show_panel = true;
+                item.setAttribute("style", "");
+            }
+            else
+                item.setAttribute("style", "display:none;");
 
-        panel.parentElement.setAttribute("style", panel.parentElement.getAttribute("style").replace("display:none;", ''));
         while (panel.getElementsByClassName("myoverlapbtn")[0]) {
             panel.removeChild(panel.getElementsByClassName("myoverlapbtn")[0]);
             panel.removeChild(panel.getElementsByTagName("br")[0]);
@@ -213,15 +232,23 @@ function RefreshPanel() {
                     ret.add(sub_id);
         if (ret.size > 1) {
             for (let sub_id of ret)
-                if (!my_overlap_works.has(sub_id))
+                if (!my_overlap_works.has(sub_id)) {
+                    need_show_panel = true;
                     panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
+                }
         }
         else if (ret.size == 1)
             for (let sub_id of ret)
                 if (!my_overlap_works.has(sub_id)) {
+                    need_show_panel = true;
                     panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
                     panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',1)">双向覆盖` + sub_id + `</a><br>`);
                 }
+
+        if (need_show_panel)
+            panel.parentElement.setAttribute("style", panel.parentElement.getAttribute("style").replace("display:none;", ''));
+        else
+            panel.parentElement.setAttribute("style", "display:none;");
     }
     else if (panel)
         panel.parentElement.setAttribute("style","display:none;");
@@ -274,12 +301,7 @@ function ReplacePushItem() {
 //同系列、社团作品、同声优作品
 //src为空时替换整个页面中的元素，否则只替换src下的元素
 function ReplaceRelatedItem(src=null) {
-    var array;
-    if (src)
-        array = src.getElementsByClassName("work_ncol");
-    else
-        array = document.getElementsByClassName("work_ncol"); 
-
+    var array = src.getElementsByClassName("work_ncol");
     //只有部分元素,随页面变化
     for (let item of array) {
         var id = item.getAttribute("data-workno");

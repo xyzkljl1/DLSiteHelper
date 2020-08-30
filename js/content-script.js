@@ -28,8 +28,8 @@ function initCustomPanel()
         panel.setAttribute("style", "z-index:9999;display:none;");
         panel.innerHTML = `
 		<div class="btn-area" id="DLHWorkInjectPanel">
-			<a href="javascript:MarkEliminated()">已阅</a><br>
-			<a href="javascript:MarkEliminatedAndClose()">已阅并关闭</a><br>
+			<a class="mymarkbtn" href="javascript:MarkEliminated()">已阅</a><br>
+			<a class="mymarkbtn" href="javascript:MarkEliminatedAndClose()">已阅并关闭</a><br>
 		</div>
 		<div id="lalal">
 		</div>
