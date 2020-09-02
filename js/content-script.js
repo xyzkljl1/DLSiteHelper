@@ -28,8 +28,8 @@ function initCustomPanel()
         panel.setAttribute("style", "z-index:9999;display:none;");
         panel.innerHTML = `
 		<div class="btn-area" id="DLHWorkInjectPanel">
-			<a class="mymarkbtn" href="javascript:MarkEliminated()">已阅</a><br>
-			<a class="mymarkbtn" href="javascript:MarkEliminatedAndClose()">已阅并关闭</a><br>
+            <div><a class="mymarkbtn" href="javascript:MarkEliminated()">已阅</a></div>
+            <div><a class="mymarkbtn" href="javascript:MarkEliminatedAndClose()">已阅并关闭</a></div>
 		</div>
 		<div id="lalal">
 		</div>
@@ -56,7 +56,7 @@ window.addEventListener("message", function(e)
     //console.log('收到消息：', e.data);
     if (e.data && e.data.cmd == 'invoke')
         eval('(' + e.data.code + ')');
-    else if (e.data && ["query", "markEliminated", "markOverlap"].includes(e.data.cmd)) {
+    else if (e.data && ["query", "markEliminated","markSpecialEliminated", "markOverlap"].includes(e.data.cmd)) {
         chrome.runtime.sendMessage({ cmd: e.data.cmd, code: e.data.code?e.data.code:"" },
             function (response) {
                 window.postMessage({ cmd: e.data.cmd + "Done", code: response });

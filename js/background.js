@@ -59,16 +59,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             tmp = tmp + item + " ";
         for (var item of bought_items)
             tmp = tmp + item + " ";
-        if (request.code && overlap_items[request.code])
-            sendResponse({ "db": tmp, "overlap": Array.from(overlap_items[request.code]).join(" ") });
-        else
-            sendResponse({ "db": tmp, "overlap": "" });
+        //查找覆盖该作品的作品，目前看来overlap_items比较小，直接枚举
+        var overlapped = [];
+        for (let key in overlap_items)
+            for (let item of overlap_items[key])
+                if (item == request.code)
+                    overlapped.push(key);
+        sendResponse({ "db": tmp, "overlap": overlap_items[request.code] ? Array.from(overlap_items[request.code]).join(" ") : "", "overlapped": overlapped.join(" ")});
     }
-    else if (request.cmd == "markEliminated") {
+    else if (request.cmd == "markEliminated" || request.cmd =="markSpecialEliminated") {
         $.ajax({
             url: 'http://127.0.0.1:4567',
             type: 'GET',
-            data: "markEliminated" + request.code,
+            data: request.cmd + request.code,
             async: false,//异步执行的话SendResponse会失效
             timeout: 2000
         }).success(function (result) {
@@ -90,9 +93,14 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             timeout: 2000
         }).success(function (result) {
             console.log("markOverlap " + request.code[0] + " " + request.code[1] + " " + result);
+            if (!overlap_items[request.code[0]])
+                overlap_items[request.code[0]] = new Set();
             overlap_items[request.code[0]].add(request.code[1]);
-            if (request.code[2])
+            if (request.code[2]) {
+                if (!overlap_items[request.code[1]])
+                    overlap_items[request.code[1]] = new Set();
                 overlap_items[request.code[1]].add(request.code[0]);
+            }
             sendResponse(request.code[1]);
         });
     }

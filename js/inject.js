@@ -1,6 +1,7 @@
 // 通过postMessage调用content-script
 var my_db = new Set();
-var my_overlap_works =new Set();
+var my_overlap_works = new Set();
+var my_overlapped_works = new Set();
 var close_when_done = false;
 var main_work_id = null;
 var is_unreaded = false;
@@ -27,8 +28,8 @@ window.addEventListener("message", function (e) {
                 my_db.add(tmp[item]);
         if (e.data.code["overlap"])
             my_overlap_works = new Set(e.data.code["overlap"].split(" "));
-        console.log('Inject.js Got DB：' + my_db.size + " " + my_overlap_works.size);
-
+        if (e.data.code["overlapped"])
+            my_overlapped_works = new Set(e.data.code["overlapped"].split(" "));
         //此时立刻替换能替换的
         ReplaceTitleItem();
         ReplaceRecommendAndSearchItem();
@@ -96,6 +97,12 @@ window.addEventListener("message", function (e) {
         my_overlap_works.add(e.data.code);
         RefreshPanel();
     }
+    else if (e.data && e.data.cmd == 'markSpecialEliminatedDone') {
+        my_db.add(main_work_id);
+        ReplaceTitleItem();
+        RefreshPanel();
+    }
+
 }, false);
 
 function test() {
@@ -111,6 +118,12 @@ function MarkOverlap(sub_id,duplex) {
 function MarkOverlapDuplex(sub_id) {
     window.postMessage({ cmd: 'MarkOverlapDuplex', code: [main_work_id, sub_id] }, '*');
 }
+
+function MarkSpecialEliminated() {
+    if (IsItemValid(main_work_id))
+        window.postMessage({ cmd: 'markSpecialEliminated', code: main_work_id }, '*');
+}
+
 function MarkEliminated() {
     if (IsItemValid(main_work_id))
         window.postMessage({ cmd: 'markEliminated', code: main_work_id }, '*');
@@ -206,6 +219,7 @@ function RefreshPanel() {
     var panel = document.getElementById("DLHWorkInjectPanel");
     if (main_work_id && panel) {
         var need_show_panel = false;
+        //设置标记已读按钮
         for (let item of panel.getElementsByClassName("mymarkbtn"))
             if (IsItemValid(main_work_id)) {
                 need_show_panel = true;
@@ -213,11 +227,16 @@ function RefreshPanel() {
             }
             else
                 item.setAttribute("style", "display:none;");
-
-        while (panel.getElementsByClassName("myoverlapbtn")[0]) {
-            panel.removeChild(panel.getElementsByClassName("myoverlapbtn")[0]);
-            panel.removeChild(panel.getElementsByTagName("br")[0]);
-        }
+        //移除旧的按钮
+        while (panel.getElementsByClassName("myoverlapbtn")[0]) 
+            panel.removeChild(panel.getElementsByClassName("myoverlapbtn")[0].parentElement);
+        while (panel.getElementsByClassName("myoverlappedbtn")[0])
+            panel.removeChild(panel.getElementsByClassName("myoverlappedbtn")[0].parentElement);
+        while (panel.getElementsByClassName("myoverlaphint")[0])
+            panel.removeChild(panel.getElementsByClassName("myoverlaphint")[0].parentElement);
+        while (panel.getElementsByClassName("myspoverlapbtn")[0])
+            panel.removeChild(panel.getElementsByClassName("myspoverlapbtn")[0].parentElement);
+        //检查是否需要标记覆盖
         var text_list = [];
         var ret = new Set();
         var area = document.getElementsByClassName("work_parts_area")[0];
@@ -230,21 +249,42 @@ function RefreshPanel() {
             if (WORK_ID_REGULAR_ALL.test(text))
                 for (let sub_id of text.match(WORK_ID_REGULAR_ALL))
                     ret.add(sub_id);
+        //添加标记该作品覆盖其它作品的按钮
         if (ret.size > 1) {
             for (let sub_id of ret)
                 if (!my_overlap_works.has(sub_id)) {
                     need_show_panel = true;
-                    panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
+                    panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a></div>`);
                 }
         }
         else if (ret.size == 1)
             for (let sub_id of ret)
                 if (!my_overlap_works.has(sub_id)) {
                     need_show_panel = true;
-                    panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a><br>`);
-                    panel.insertAdjacentHTML("afterbegin", `<a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',1)">双向覆盖` + sub_id + `</a><br>`);
+                    panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a></div>`);
+                    panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',1)">双向覆盖` + sub_id + `</a></div>`);
                 }
-
+        //添加覆盖提示
+        if (my_overlap_works.size > 0&&IsItemValid(main_work_id)){
+            need_show_panel = true;
+            var ct = 0;
+            for (let id of my_overlap_works)
+                if (my_db.has(id))
+                    ct++;
+            //特记排除，如果该作品覆盖的作品都已排除/购买，则特殊排除该作品
+            //特殊排除跟普通排除的区别是不会影响该作品覆盖的作品
+            if (ct == my_overlap_works.size)
+                panel.insertAdjacentHTML("afterbegin", `<div><a class="myspoverlapbtn" href="javascript:MarkSpecialEliminated()">特记排除</a></div>`);
+            panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlaphint">覆盖` + ct + "/" + my_overlap_works.size + `</a></div>`);
+        }
+        //添加覆盖该作品的作品
+        for (let id of my_overlapped_works)
+            {
+            need_show_panel = true;
+            //该作品可能不是/maniax/work下的，但都会自动转过去
+            var url = "https://www.dlsite.com/maniax/work/=/product_id/" + id + ".html";
+            panel.insertAdjacentHTML("afterend", `<div><a class="myoverlappedbtn" target="_blank" href="`+url+`">包含于` + id + `</a></div>`);
+            }
         if (need_show_panel)
             panel.parentElement.setAttribute("style", panel.parentElement.getAttribute("style").replace("display:none;", ''));
         else
