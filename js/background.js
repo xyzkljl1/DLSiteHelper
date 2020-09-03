@@ -8,7 +8,8 @@ var WORK_ID_REGULAR_ALL = /[RVBJ]{1,2}[0-9]{3,6}/g;
 $.ajax({
     url: 'http://127.0.0.1:4567',
     type: 'GET',
-    data: "QueryInvalidDLSite"
+    data: "QueryInvalidDLSite",
+    cache: false
 }).done(function (result) {
     var tmp = result.split(" ");
     for (let item in tmp)
@@ -20,7 +21,8 @@ $.ajax({
 $.ajax({
     url: 'http://127.0.0.1:4567',
     type: 'GET',
-    data: "QueryOverlapDLSite"
+    data: "QueryOverlapDLSite",
+    cache: false
 }).done(function (result) {
     overlap_items = JSON.parse(result);
     for (let key in overlap_items)
@@ -32,7 +34,7 @@ UpdateCartItems();
 UpdateBoughtItems(false);
 
 //有xxx/RJxxx.html和xxx/RJxxx两种格式的网址
-//同样的代码在不同的js里都出现了，目前不知道有什么好的方法解决
+//同样的代码在不同的js里都出现了,目前不知道有什么好的方法解决
 function GetFileName(path) {
     var ret = path.substring(path.lastIndexOf("/") + 1);
     if (ret.lastIndexOf(".") > 0)
@@ -59,7 +61,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             tmp = tmp + item + " ";
         for (var item of bought_items)
             tmp = tmp + item + " ";
-        //查找覆盖该作品的作品，目前看来overlap_items比较小，直接枚举
+        //查找覆盖该作品的作品,目前看来overlap_items比较小,直接枚举
         var overlapped = [];
         for (let key in overlap_items)
             for (let item of overlap_items[key])
@@ -73,7 +75,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             type: 'GET',
             data: request.cmd + request.code,
             async: false,//异步执行的话SendResponse会失效
-            timeout: 2000
+            timeout: 2000,
+            cache: false
         }).success(function (result) {
             console.log("Mark " + request.code + " " + result);
             invalid_items.add(request.code);
@@ -90,7 +93,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             type: 'GET',
             data: "markOverlap&main=" + request.code[0] + "&sub=" + request.code[1] + "&duplex=" + request.code[2],
             async: false,//异步执行的话SendResponse会失效
-            timeout: 2000
+            timeout: 2000,
+            cache: false
         }).success(function (result) {
             console.log("markOverlap " + request.code[0] + " " + request.code[1] + " " + result);
             if (!overlap_items[request.code[0]])
@@ -113,10 +117,10 @@ function UpdateCartItems() {
     $.ajax({
         url: 'https://www.dlsite.com/maniax/cart',
         type: 'GET',
-        path: '/maniax/cart'
-
+        path: '/maniax/cart',
+        cache:false//不使用缓存
     }).done(function (result) {
-        //把乱七八糟的变成文本，省的报错
+        //把乱七八糟的变成文本,省的报错
         result = result.replace(/<script/g, "<a");
         result = result.replace(/<\/script/g, "</a");
         result = result.replace(/<link/g, "<a");
@@ -124,6 +128,7 @@ function UpdateCartItems() {
         result = result.replace(/<img/g, "<a");
         result = result.replace(/<\/img"/g, "</a");
         $('#tmp_area').append(jQuery.parseHTML(result));
+        cart_items.clear();
         var cart = document.getElementById("tmp_area").getElementsByClassName("cart_list")[0];
         if (cart && cart.getElementsByClassName("work_name"))
             for (let dt of cart.getElementsByClassName("work_name")) {
@@ -134,6 +139,7 @@ function UpdateCartItems() {
                         cart_items.add(id);
                 }
             }
+        document.getElementById("tmp_area").innerHTML = "";
         console.log("Cart Info Updated",cart_items.size);
     });
 }
@@ -142,7 +148,8 @@ function UpdateBoughtItems(need_download) {
     $.ajax({
         url: 'https://ssl.dlsite.com/maniax/load/bought/product',
         type: 'GET',
-        path: '/maniax/cart'
+        path: '/maniax/cart',
+        cache: false
     }).done(function (result) {
         //从网站获取数据
         var obj = JSON.parse(result);
@@ -157,7 +164,8 @@ function UpdateBoughtItems(need_download) {
             $.ajax({
                 url: 'http://127.0.0.1:4567/?UpdateBoughtItems',
                 type: 'POST',
-                data: tmp
+                data: tmp,
+                cache: false
             }).success(function (result) {
                 console.log("Server Bought Items Updated", bought_items.size);
                 });
@@ -165,7 +173,8 @@ function UpdateBoughtItems(need_download) {
             $.ajax({
                 url: 'http://127.0.0.1:4567/?UpdateBoughtItems',
                 type: 'POST',
-                data: tmp
+                data: tmp,
+                cache: false
             }).success(function (result) {
                 StartDownload();
                 });
@@ -176,7 +185,8 @@ function StartDownload() {
     //先下载一次刷新cookie?不知道有没有用
     $.ajax({
         url: 'https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html',
-        type: 'HEAD'
+        type: 'HEAD',
+        cache: false
     }).done(function (result) {
         chrome.cookies.getAll({ "url": "https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html" }, function (cookies) {
             var ret = "";
@@ -185,7 +195,8 @@ function StartDownload() {
             $.ajax({
                 url: 'http://127.0.0.1:4567?Download',
                 type: 'POST',
-                data: ret
+                data: ret,
+                cache: false
             }).done(function (result) {
                 console.log("Download Begin " + result);
             });

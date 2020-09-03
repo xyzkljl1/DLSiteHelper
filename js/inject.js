@@ -65,10 +65,17 @@ window.addEventListener("message", function (e) {
         {
             var list_item = document.getElementById("_recommend_box_viewsalesgenresaleshistory");
             if (list_item) {
-                var observer = new MutationObserver(function () { ReplaceCartRecommendItem(); NoticeUpdateCart(); });
+                var observer = new MutationObserver(function () { ReplaceCartRecommendItem();});
                 observer.observe(list_item, { childList: true });
             }
-        }        
+        }
+        //加入购物车按钮
+        {
+            var items = document.getElementsByClassName("btn_cart");
+            if (items)
+                for (let item of items)
+                    item.onclick = NoticeUpdateCart;
+        }
         {//活动页面的搜索结果在点击左侧过滤器时不会刷新页面而是直接换掉整个列表,需要监听容器
             var container = document.getElementsByClassName("_search_result_container")[0];
             if (container) {
