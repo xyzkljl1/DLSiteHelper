@@ -6,4 +6,4 @@ dlsite专用Chrome插件，与运行在本地的DLSiteHelperServer配套使用
 触发Server的下载功能  
   
   
-现在是在元素load/resize完成才替换的，所以会有闪烁，说实话效果刁差，到底怎么办呢……
+现在是在load时替换元素的，所以会有闪烁，暂时没想到好的解决办法
