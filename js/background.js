@@ -2,8 +2,8 @@ var invalid_items = new Set();
 var overlap_items = null;
 var cart_items = new Set();
 var bought_items = new Set();
-var WORK_ID_REGULAR = /[RVBJ]{1,2}[0-9]{3,6}/;
-var WORK_ID_REGULAR_ALL = /[RVBJ]{1,2}[0-9]{3,6}/g;
+var WORK_ID_REGULAR = /[RVBJ]{2}[0-9]{3,6}/;
+var WORK_ID_REGULAR_ALL = /[RVBJ]{2}[0-9]{3,6}/g;
 
 $.ajax({
     url: 'http://127.0.0.1:4567',
@@ -49,6 +49,12 @@ chrome.contextMenus.create({
     parentId: top_menu,
     onclick: function () { UpdateBoughtItems(true);}
 });
+chrome.contextMenus.create({
+    title: "重命名本地文件",
+    parentId: top_menu,
+    onclick: function () { RenameLocal(true); }
+});
+
 
 // 监听来自content-script的消息
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
@@ -141,6 +147,16 @@ function UpdateCartItems() {
             }
         document.getElementById("tmp_area").innerHTML = "";
         console.log("Cart Info Updated",cart_items.size);
+    });
+}
+
+function RenameLocal(need_download) {
+    $.ajax({
+        url: 'http://127.0.0.1:4567/?RenameLocal',
+        type: 'Get',
+        cache: false
+    }).success(function (result) {
+        console.log("Rename Started");
     });
 }
 
