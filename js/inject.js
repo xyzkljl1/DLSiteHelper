@@ -246,16 +246,16 @@ function RefreshPanel() {
         //检查是否需要标记覆盖
         var text_list = [];
         var ret = new Set();
-        var area = document.getElementsByClassName("work_parts_area")[0];
-        if (area)
+        for(let area of document.getElementsByClassName("work_parts_area"))
             text_list.push(area.getElementsByTagName("p")[0].innerText);
-        area = document.getElementsByClassName("work_article work_story")[0];
-        if (area)
+        for (let area of document.getElementsByClassName("work_article work_story"))
             text_list.push(area.innerText);
         for (let text of text_list)
             if (WORK_ID_REGULAR_ALL.test(text))
                 for (let sub_id of text.match(WORK_ID_REGULAR_ALL))
                     ret.add(sub_id);
+        //console.log(text_list);
+        //console.log(ret);
         //添加标记该作品覆盖其它作品的按钮
         if (ret.size > 1) {
             for (let sub_id of ret)
