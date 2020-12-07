@@ -200,11 +200,15 @@ function UpdateBoughtItems(need_download) {
 function StartDownload() {
     //先下载一次刷新cookie?不知道有没有用
     $.ajax({
-        url: 'https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html',
+        //url: 'https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html',
+        url:'https://ssl.dlsite.com/maniax/mypage',
+        //url:'https://download.dlsite.com/get/=/type/work/domain/doujin/dir/RJ299000/file/RJ298231.part1.exe/_/20200903152647',
         type: 'HEAD',
-        cache: false
+        cache: false,        
     }).done(function (result) {
-        chrome.cookies.getAll({ "url": "https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html" }, function (cookies) {
+//        chrome.cookies.getAll({ "url": "https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html" }, function (cookies) {
+//          chrome.cookies.getAll({ "domain": "dlsite.com" }, function (cookies) {
+        chrome.cookies.getAll({ "url": "https://download.dlsite.com/get/=/type/work/domain/doujin/dir/RJ299000/file/RJ298231.part2.rar/_/20200903152755" }, function (cookies) {
             var ret = "";
             for (let cookie of cookies)
                 ret += cookie.name + "=" + cookie.value + "; ";
