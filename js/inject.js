@@ -89,6 +89,15 @@ window.addEventListener("message", function (e) {
             for (let list_item of document.getElementsByClassName("push_list"))
                 observer.observe(list_item, { childList: true });
         }
+        //首页下方的新作品列表(new_worklist)，具有若干work_block,每个block动态加载若干n_worklist_item
+        //点击"更多"按钮时，添加若干work_block
+        //因此要递归监听(subtree)
+        {
+            var observer = new MutationObserver(function () { ReplaceNewWorklist(); });
+            var item = document.getElementById("new_worklist");
+            if(item)
+                observer.observe(item, { childList: true,subtree:true });
+        }
     }
     else if (e.data && e.data.cmd == 'markEliminatedDone') {
         if (close_when_done)
@@ -368,6 +377,18 @@ function ReplaceCartRecommendItem() {
     }
 }
 
+//首页下方的worklist
+function ReplaceNewWorklist(){
+
+    for (let item of document.getElementsByClassName("n_worklist_item"))
+        if (item.getElementsByClassName("work_name").length > 0) {
+            var address = item.getElementsByClassName("work_name")[0].getElementsByTagName("a")[0].getAttribute("href");
+            var id = GetFileName(address);
+            if (!IsItemValid(id))
+                item.setAttribute("hidden", true);
+        }
+}
+
 //搜索结果/社团/活动列表，首页下方的worklist，也购买过、也查看过、最近看过的作品
 function ReplaceRecommendAndSearchItem() {
     //单列搜索结果列表/社团商品列表/活动商品列表，社团发售预告列表
@@ -386,18 +407,17 @@ function ReplaceRecommendAndSearchItem() {
         if (!IsItemValid(id))
             SetLabelDisplayFalse(item.parentElement);
     }
-    //首页下方的worklist
-    for (let item of document.getElementsByClassName("n_worklist_item")) {
-        var address = item.getElementsByClassName("work_name")[0].getElementsByTagName("a")[0].getAttribute("href");
-        var id = GetFileName(address);
-        if (!IsItemValid(id))
-            item.setAttribute("hidden",true);
-    }
-
+    //首页下方的new_worklist
+    ReplaceNewWorklist();
     //也购买过、也查看过、最近看过的作品
     //所有元素最初就存在,不会变更
+    //在产品页面和首页都有，但是在产品页面work_name具有href，在首页上则是work_name下的a具有href
     for (let item of document.getElementsByClassName("recommend_work_item")) {
-        var address = item.getElementsByClassName("work_name")[0].getAttribute("href");
+        var work_name_item = item.getElementsByClassName("work_name")[0];
+        if (work_name_item.hasAttribute("href"))
+            address = work_name_item.getAttribute("href");
+        else
+            address = work_name_item.getElementsByTagName("a")[0].getAttribute("href");
         var id = GetFileName(address);
         if (!IsItemValid(id))
             SetLabelDisplayFalse(item.parentElement);
