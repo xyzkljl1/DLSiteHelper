@@ -35,6 +35,7 @@ window.addEventListener("message", function (e) {
         ReplaceRecommendAndSearchItem();
         ReplacePushItem();
         ReplaceRankItem();
+        ReplaceGenreItem();
         RefreshPanel();
 
         //同社团/系列/声优作品列表,resize或者滑动时子项变化
@@ -42,8 +43,12 @@ window.addEventListener("message", function (e) {
         //_recommend_box_viewannouncegenresaleshistory是未发售作品页面下方的"也查看了以下作品"，一样在滑动时子项变化
         /*注:
          * 总体来说：
-         * 同社团/系列/声优作品，为关联作品，格式一致，子项浮动
-         * 也查看/也购买/最近看过，即推荐作品，格式一致，子项固定
+         * 同社团/系列/声优作品，为关联作品[Related]，格式一致，子项浮动
+         * 也查看/也购买/最近看过，即推荐作品[Recommend]，格式一致，子项固定
+         * 首页上方的打折/推荐为推送作品[Push]，格式一致，子项固定
+         * 排行页面的排行为[Rank],首页的综合排行为[Recommend]，首页的分类别排行为单独格式(与Recommend一起处理)
+         * 类别首页(如maniax/works/voice)上方的排行/推荐是类别作品[Genre]，子项固定(与一般关联/推荐作品、其它地方的排行都不同)
+         * 显示和隐式的搜索结果为[Search],新作品列表等也属于搜索作品
          但同样是作品页面下方的"也查看了以下作品"
          已发售作品下方的，子项固定，格式同推荐列表，没有id
          未发售作品下方的，子项浮动，格式同关联列表，id是_recommend_box_viewannouncegenresaleshistory
@@ -322,6 +327,16 @@ function ReplaceTitleItem()
         }
 }
 
+//特定类别的推荐/排行/打折作品,如maniax/works/voice顶部的滑动条，固定
+function ReplaceGenreItem() {   
+    for (let item of document.getElementsByClassName("genre_work_item")) {
+        var address = item.getElementsByClassName("genre_work_name")[0].getElementsByTagName("a")[0].getAttribute("href");
+        var id = GetFileName(address);
+        if (!IsItemValid(id))
+            SetLabelDisplayFalse(item);
+    }
+}
+
 //首页侧边栏的rank
 function ReplaceRankItem()
 {
@@ -422,4 +437,12 @@ function ReplaceRecommendAndSearchItem() {
         if (!IsItemValid(id))
             SetLabelDisplayFalse(item.parentElement);
     }
+    //首页的分类别排行
+    for (let class_name of [ "genre_ranking_item","genre_ranking_sub_item"])
+        for (let item of document.getElementsByClassName(class_name)) {
+            var address = item.getElementsByClassName("work_name")[0].getElementsByTagName("a")[0].getAttribute("href");
+            var id = GetFileName(address);
+            if (!IsItemValid(id))
+                SetLabelDisplayFalse(item);
+        }
 }
