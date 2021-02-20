@@ -216,7 +216,8 @@ function StartDownload() {
                 url: 'http://127.0.0.1:4567?Download',
                 type: 'POST',
                 data: ret,
-                cache: false
+                cache: false,
+                beforeSend: function (request) { request.setRequestHeader("user-agent",window.navigator.userAgent); }
             }).done(function (result) {
                 console.log("Download Begin " + result);
             });
