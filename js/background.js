@@ -216,8 +216,8 @@ function StartDownload() {
                 url: 'http://127.0.0.1:4567?Download',
                 type: 'POST',
                 data: ret,
-                cache: false,
-                beforeSend: function (request) { request.setRequestHeader("user-agent",window.navigator.userAgent); }
+                cache: false
+                //无需手动设置user-agent,本来就会带上
             }).done(function (result) {
                 console.log("Download Begin " + result);
             });
