@@ -4,7 +4,10 @@ console.log('ContentScript Begin');
 
 // 注意，必须设置了run_at=document_start 此段代码才会生效
 document.addEventListener('DOMContentLoaded', DoInject);
-function DoInject(){
+function DoInject() {
+    //购入履历页面全都是已购买没有必要注入
+    if (window.location.href == "https://ssl.dlsite.com/maniax/mypage/userbuy")
+        return;
     // 注入自定义JS
     injectCustomJs();
     initCustomPanel();
