@@ -14,11 +14,10 @@ DLSite专用Chrome插件，与运行在本地的[DLSiteHelperServer](https://git
 2.已下载/已购买/已读的商品 会从搜索、推荐、推送、排行页面消失  
 ![image](other/0.PNG)  
 
-3.一键下载已购买商品(不解压)  
+3.一键下载已购买商品,自动解压、转换编码并重命名为RJ号+标题的文件夹
 ![image](other/4.PNG)  
 下载由服务端完成，如服务端指定的目录下存在以某商品RJ号命名的文件夹，则其视作已下载
-![image](other/5.PNG)
-![image](other/6.PNG)  
+![image](other/5.PNG)  
 
 4.重命名本地文件夹
 ![image](other/4.PNG)  
