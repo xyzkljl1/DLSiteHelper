@@ -385,7 +385,8 @@ function ReplaceCartRecommendItem() {
     var list_item = document.getElementById("_recommend_box_viewsalesgenresaleshistory");
     //格式上跟ReplaceRelatedItem的列表相同，可以用ReplaceRelatedItem替代
     //但是由于这个列表的子项不会在滑动时变化，所以用ReplaceRecommendAndSearchItem的方式隐藏效果更好
-    for (let item of list_item.getElementsByClassName("work_ncol")) {
+//    for (let item of list_item.getElementsByClassName("work_ncol")) {
+    for (let item of list_item.getElementsByClassName("n_work_list_item swiper-slide _recommend_swiper_slide")) {
         var id = item.getAttribute("data-workno");
         if (!IsItemValid(id))
             SetLabelDisplayFalse(item.parentElement);
