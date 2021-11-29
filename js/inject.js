@@ -321,9 +321,8 @@ function ReplaceTitleItem()
 {
     if (main_work_id)
         if (!IsItemValid(main_work_id)) {
-            var tmp = document.getElementsByClassName("base_title_br clearfix")[0].getElementsByTagName("h1")[0];
-            var title = tmp.getElementsByTagName("a")[0];
-            title.innerHTML = "<s>" + title.innerHTML + "</s>";
+            var title = document.getElementsByClassName("base_title_br clearfix")[0].getElementsByTagName("h1")[0];
+            title.outerHTML = "<s>" + title.outerHTML + "</s>";
         }
 }
 
