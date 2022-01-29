@@ -258,32 +258,45 @@ function RefreshPanel() {
         while (panel.getElementsByClassName("myspoverlapbtn")[0])
             panel.removeChild(panel.getElementsByClassName("myspoverlapbtn")[0].parentElement);
         //检查是否需要标记覆盖
-        var text_list = [];
-        var ret = new Set();
-        for (let area of document.getElementsByClassName("work_parts_area"))
-            text_list.push(area.innerText);
-        for (let area of document.getElementsByClassName("work_article work_story"))
-            text_list.push(area.innerText);
-        for (let text of text_list)
-            if (WORK_ID_REGULAR_ALL.test(text))
-                for (let sub_id of text.match(WORK_ID_REGULAR_ALL))
-                    ret.add(sub_id);
+        var ret = new Map();
+        {//正文提到的其它作品
+            var text_list = [];
+            for (let area of document.getElementsByClassName("work_parts_area"))
+                text_list.push(area.innerText);
+            for (let area of document.getElementsByClassName("work_article work_story"))
+                text_list.push(area.innerText);
+            for (let text of text_list)
+                if (WORK_ID_REGULAR_ALL.test(text))
+                    for (let sub_id of text.match(WORK_ID_REGULAR_ALL))
+                        ret.set(sub_id,"");
+        }
+        {//其它语言版本
+            for (let item of document.getElementsByClassName("work_edition_linklist_item"))
+            {
+                var sub_id = GetFileName(item.href);
+                if (sub_id != main_work_id)
+                    ret.set(sub_id, item.innerText);
+            }
+        }
         //console.log(text_list);
         //console.log(ret);
         //添加标记该作品覆盖其它作品的按钮
         if (ret.size > 1) {
             for (let sub_id of ret)
-                if (!my_overlap_works.has(sub_id)) {
+                if (!my_overlap_works.has(sub_id[0])) {
                     need_show_panel = true;
-                    panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a></div>`);
+                    if (sub_id[1]!="")//其它语言版本全部视为双向覆盖
+                        panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id[0] + `',1)">双向覆盖` + sub_id[0] + ` ` + sub_id[1] + `</a></div>`);
+                    else
+                        panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id[0] + `',0)">覆盖` + sub_id[0] + ` ` + sub_id[1] + `</a></div>`);
                 }
         }
         else if (ret.size == 1)
             for (let sub_id of ret)
-                if (!my_overlap_works.has(sub_id)) {
+                if (!my_overlap_works.has(sub_id[0])) {
                     need_show_panel = true;
-                    panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',0)">覆盖` + sub_id + `</a></div>`);
-                    panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id + `',1)">双向覆盖` + sub_id + `</a></div>`);
+                    panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id[0] + `',0)">覆盖` + sub_id[0] + ` ` + sub_id[1] + `</a></div>`);
+                    panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlapbtn" href="javascript:MarkOverlap('` + sub_id[0] + `',1)">双向覆盖` + sub_id[0] + ` ` + sub_id[1] + `</a></div>`);
                 }
         //添加覆盖提示
         if (my_overlap_works.size > 0&&IsItemValid(main_work_id)){
@@ -292,8 +305,7 @@ function RefreshPanel() {
             for (let id of my_overlap_works)
                 if (my_db.has(id))
                     ct++;
-            //特记排除，如果该作品覆盖的作品都已排除/购买，则特殊排除该作品
-            //特殊排除跟普通排除的区别是不会影响该作品覆盖的作品
+            //特记排除，如果想排除该作品，且不想连带排除其覆盖的作品，则使用特记排除
             if (ct == my_overlap_works.size)
                 panel.insertAdjacentHTML("afterbegin", `<div><a class="myspoverlapbtn" href="javascript:MarkSpecialEliminated()">特记排除</a></div>`);
             panel.insertAdjacentHTML("afterbegin", `<div><a class="myoverlaphint">覆盖` + ct + "/" + my_overlap_works.size + `</a></div>`);
