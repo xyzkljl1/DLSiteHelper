@@ -1,10 +1,9 @@
 {
-  // 清单文件的版本，这个必须写，而且必须是2
-  "manifest_version": 2,
+  "manifest_version": 3,
   // 插件的名称
   "name": "DLSiteHelper",
   // 插件的版本
-  "version": "1.0.0",
+  "version": "1.0.1",
   // 插件描述
   "description": "DLSiteHelper",
   // 图标，一般偷懒全部用一个尺寸的也没问题
@@ -15,13 +14,8 @@
   },
   // 会一直常驻的后台JS或后台页面
   "background": {
-    // 2种指定方式，如果指定JS，那么会自动生成一个背景页
-    "page": "background.html"
-    //"scripts": ["js/background.js"]
-  },
-  // 浏览器右上角图标设置，browser_action、page_action、app必须三选一
-  "browser_action": {
-    "default_icon": "asset/icon.png"
+    "service_worker": "background.js",
+    "type": "module"
   },
   // 需要直接注入页面的JS
   "content_scripts": [
@@ -44,13 +38,20 @@
     "tabs", // 标签
     "notifications", // 通知
     "webRequest", // web请求
-    "webRequestBlocking", // 阻塞式web请求
-    "storage", // 插件本地存储
-    "http://*/*", // 可以通过executeScript或者insertCSS访问的网站
-    "https://*/*" // 可以通过executeScript或者insertCSS访问的网站
+    "storage",// 插件本地存储
+    "scripting", //keepalive
+    "declarativeNetRequest"//webblockrequest
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   // 普通页面能够直接访问的插件资源列表，如果不设置是无法直接访问的
-  "web_accessible_resources": [ "js/inject.js" ],
+  "web_accessible_resources": [
+    {
+      "resources": [ "js/inject.js","js/content-script.js" ],
+      "matches": [ "<all_urls>" ]
+    }
+  ],
 
   // 向地址栏注册一个关键字以提供搜索建议，只能设置一个关键字
   "omnibox": { "keyword": "go" }

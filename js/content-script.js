@@ -6,7 +6,7 @@ console.log('ContentScript Begin');
 document.addEventListener('DOMContentLoaded', DoInject);
 function DoInject() {
     //购入履历页面全都是已购买没有必要注入
-    if (window.location.href == "https://ssl.dlsite.com/maniax/mypage/userbuy")
+    if (window.location.href == "https://www.dlsite.com/home/mypage/userbuy")
         return;
     // 注入自定义JS
     injectCustomJs();
@@ -31,8 +31,8 @@ function initCustomPanel()
         panel.setAttribute("style", "z-index:9999;display:none;");
         panel.innerHTML = `
 		<div class="btn-area" id="DLHWorkInjectPanel">
-            <div><a class="mymarkbtn" href="javascript:MarkEliminated()">已阅</a></div>
-            <div><a class="mymarkbtn" href="javascript:MarkEliminatedAndClose()">已阅并关闭</a></div>
+            <div><a class="mymarkbtn" href="javascript:MarkEliminated(false)">已阅</a></div>
+            <div><a class="mymarkbtn" href="javascript:MarkEliminated(true)">已阅并关闭</a></div>
 		</div>
 		<div id="lalal">
 		</div>
@@ -41,12 +41,13 @@ function initCustomPanel()
     }
 }
 
-function injectCustomJs(jsPath)
+function injectCustomJs()
 {
-	jsPath = jsPath || 'js/inject.js';
+	var jsPath = 'js/inject.js';
 	var temp = document.createElement('script');
-	temp.setAttribute('type', 'text/javascript');
-	temp.src = chrome.extension.getURL(jsPath);
+    temp.setAttribute('type', 'text/javascript');
+    //temp.setAttribute('src', jsPath);
+	temp.src = chrome.runtime.getURL(jsPath);
 	temp.onload = function()
 	{
 		this.parentNode.removeChild(this);
@@ -59,7 +60,7 @@ window.addEventListener("message", function(e)
     //console.log('收到消息：', e.data);
     if (e.data && e.data.cmd == 'invoke')
         eval('(' + e.data.code + ')');
-    else if (e.data && ["query", "markEliminated","markSpecialEliminated", "markOverlap"].includes(e.data.cmd)) {
+    else if (e.data && ["query", "markEliminated", "markSpecialEliminated", "markOverlap"].includes(e.data.cmd)) {
         chrome.runtime.sendMessage({ cmd: e.data.cmd, code: e.data.code?e.data.code:"" },
             function (response) {
                 window.postMessage({ cmd: e.data.cmd + "Done", code: response });

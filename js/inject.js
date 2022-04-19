@@ -2,7 +2,6 @@
 var my_db = new Set();
 var my_overlap_works = new Set();
 var my_overlapped_works = new Set();
-var close_when_done = false;
 var main_work_id = null;
 var is_unreaded = false;
 var WORK_ID_REGULAR = /[RVBJ]{2}[0-9]{3,6}/;
@@ -105,14 +104,10 @@ window.addEventListener("message", function (e) {
         }
     }
     else if (e.data && e.data.cmd == 'markEliminatedDone') {
-        if (close_when_done)
-            CloseWindow();
-        else {
-            var id = GetFileName(window.location.href);
-            my_db.add(id);
-            ReplaceTitleItem();
-            RefreshPanel();
-        }
+        var id = GetFileName(window.location.href);
+        my_db.add(id);
+        ReplaceTitleItem();
+        RefreshPanel();
     }
     else if (e.data && e.data.cmd == 'markOverlapDone') {
         my_overlap_works.add(e.data.code);
@@ -126,33 +121,53 @@ window.addEventListener("message", function (e) {
 
 }, false);
 
-function test() {
-}
 
 function NoticeUpdateCart() {
     window.postMessage({ cmd: 'updateCart', code:"" }, '*');
 }
 
-function MarkOverlap(sub_id,duplex) {
-    window.postMessage({ cmd: 'markOverlap', code: [main_work_id, sub_id, duplex] }, '*');
-}
-function MarkOverlapDuplex(sub_id) {
-    window.postMessage({ cmd: 'MarkOverlapDuplex', code: [main_work_id, sub_id] }, '*');
+function MarkOverlap(sub_id, duplex) {
+    $.ajax({
+        url: 'http://127.0.0.1:4567',
+        type: 'GET',
+        data: "markOverlap&main=" + main_work_id + "&sub=" + sub_id + "&duplex=" + duplex,
+        timeout: 2000,
+        cache: false
+    }).success(function (result) {
+        console.log("markOverlap " + main_work_id + " " + sub_id + " Success");
+        window.postMessage({ cmd: 'markOverlap', code: [main_work_id, sub_id, duplex] }, '*');
+    });
 }
 
 function MarkSpecialEliminated() {
     if (IsItemValid(main_work_id))
-        window.postMessage({ cmd: 'markSpecialEliminated', code: main_work_id }, '*');
+        $.ajax({
+            url: 'http://127.0.0.1:4567',
+            type: 'GET',
+            data: 'markSpecialEliminated' + main_work_id,
+            timeout: 2000,
+            cache: false
+        }).success(function (result) {
+            console.log("MarkSP " + main_work_id);
+            window.postMessage({ cmd: 'markSpecialEliminated', code: main_work_id }, '*');
+        });
 }
 
-function MarkEliminated() {
-    if (IsItemValid(main_work_id))
-        window.postMessage({ cmd: 'markEliminated', code: main_work_id }, '*');
-}
-function MarkEliminatedAndClose() {
-    close_when_done = true;
-    if (IsItemValid(main_work_id))
-        window.postMessage({ cmd: 'markEliminated', code: main_work_id }, '*');
+function MarkEliminated(close_window) {
+    if (IsItemValid(main_work_id)) {
+        $.ajax({
+            url: 'http://127.0.0.1:4567',
+            type: 'GET',
+            data: 'markEliminated' + main_work_id,
+            timeout: 2000,
+            cache: false
+        }).success(function (result) {
+            console.log("Mark " + main_work_id);
+            window.postMessage({ cmd: 'markEliminated', code: main_work_id }, '*');
+            if (close_window)
+                CloseWindow();
+        });
+    }
     else
         CloseWindow();
 }
@@ -333,8 +348,10 @@ function ReplaceTitleItem()
 {
     if (main_work_id)
         if (!IsItemValid(main_work_id)) {
-            var title = document.getElementsByClassName("base_title_br clearfix")[0].getElementsByTagName("h1")[0];
-            title.outerHTML = "<s>" + title.outerHTML + "</s>";
+            for (let item of document.getElementsByClassName("base_title_br clearfix")) {
+                var title=item.getElementsByTagName("h1")[0];
+                title.outerHTML = "<s>" + title.outerHTML + "</s>";
+            }
         }
 }
 
