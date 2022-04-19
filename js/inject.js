@@ -110,7 +110,10 @@ window.addEventListener("message", function (e) {
         RefreshPanel();
     }
     else if (e.data && e.data.cmd == 'markOverlapDone') {
-        my_overlap_works.add(e.data.code);
+        console.log(e.data.code);
+        my_overlap_works.add(e.data.code["id"]);
+        if (e.data.code["duplex"])
+            my_overlapped_works.add(e.data.code["id"]);
         RefreshPanel();
     }
     else if (e.data && e.data.cmd == 'markSpecialEliminatedDone') {
@@ -331,7 +334,8 @@ function RefreshPanel() {
             need_show_panel = true;
             //该作品可能不是/maniax/work下的，但都会自动转过去
             var url = "https://www.dlsite.com/maniax/work/=/product_id/" + id + ".html";
-            panel.insertAdjacentHTML("afterend", `<div><a class="myoverlappedbtn" target="_blank" href="`+url+`">包含于` + id + `</a></div>`);
+            //用afterend会加到panel的平级，beforeend才会加到panel的子元素
+            panel.insertAdjacentHTML("beforeend", `<div><a class="myoverlappedbtn" href="` + url + `">包含于` + id + `</a></div>`);
             }
         if (need_show_panel)
             panel.parentElement.setAttribute("style", panel.parentElement.getAttribute("style").replace("display:none;", ''));

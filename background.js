@@ -109,7 +109,7 @@ chrome.runtime.onMessage.addListener(async function (request, sender, sendRespon
                 overlap_items[request.code[1]] = new Set();
             overlap_items[request.code[1]].add(request.code[0]);
         }
-        sendResponse(request.code[1]);
+        sendResponse({ "id":request.code[1], "duplex": request.code[2] });
     }
     else if (request.cmd == "updateCart") {
         UpdateCartItems();
