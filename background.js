@@ -192,30 +192,33 @@ function UpdateBoughtItems(need_download) {
     });
 }
 //向本地服务器发送下载请求
-function StartDownload() {
+async function StartDownload() {
     //先下载一次刷新cookie?不知道有没有用
-    fetch('https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html',{
+    Promise.race([
+        new Promise((resolve, reject) => { setTimeout(resolve, 1500, 'head timeout,ignore'); }),
+        fetch('https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html', {
         //url:'https://ssl.dlsite.com/maniax/mypage',
         //url:'https://download.dlsite.com/get/=/type/work/domain/doujin/dir/RJ299000/file/RJ298231.part1.exe/_/20200903152647',
         method: "HEAD",
         headers: { 'Cache-Control': 'no-cache' }
-    }).then(res => res.text())
-        .then(function(result) {
-          //chrome.cookies.getAll({ "domain": "dlsite.com" }, function (cookies) {
-          //chrome.cookies.getAll({ "url": "https://download.dlsite.com/get/=/type/work/domain/doujin/dir/RJ299000/file/RJ298231.part2.rar/_/20200903152755" }, function (cookies) {
-          chrome.cookies.getAll({ "url": "https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html" }, function (cookies) {
-              var ret = "";
-              for (let cookie of cookies)
-                    ret += cookie.name + "=" + cookie.value + "; ";
-              fetch('http://127.0.0.1:4567?Download',{
-                  method: "POST",
-                  headers: { 'Cache-Control': 'no-cache' },
-                  body: ret,
-                //无需手动设置user-agent,本来就会带上
-              }).then(res => res.text())
-                .then(result=>console.log("Download Begin " + result));
-        });
+        }
+    )]);
+    //chrome.cookies.getAll({ "url": "https://download.dlsite.com/get/=/type/work/domain/doujin/dir/RJ299000/file/RJ298231.part2.rar/_/20200903152755" }, function (cookies) {
+    var cookies=await chrome.cookies.getAll({ "url": "https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html" });
+    var ret = "";
+    for (let cookie of cookies)
+        ret += cookie.name + "=" + cookie.value + "; ";
+    console.log("Trying to Start Download,this may take few minutes.");
+    var res = await fetch('http://127.0.0.1:4567?Download', {
+        method: "POST",
+        headers: { 'Cache-Control': 'no-cache' },
+        body: ret,
+        //无需手动设置user-agent,本来就会带上
     });
+    if(res.ok)
+        console.log("Download Begin " + res.text());
+    else
+        console.log("Download Fail.");
 }
 
 let lifeline;
