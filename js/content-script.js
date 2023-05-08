@@ -1,5 +1,5 @@
-﻿var WORK_ID_REGULAR = /[RVBJ]{2}[0-9]{3,6}/;
-var WORK_ID_REGULAR_ALL = /[RVBJ]{2}[0-9]{3,6}/g;
+﻿var WORK_ID_REGULAR = /[RVBJ]{2}[0-9]{3,8}/;
+var WORK_ID_REGULAR_ALL = /[RVBJ]{2}[0-9]{3,8}/g;
 console.log('ContentScript Begin');
 
 // 注意，必须设置了run_at=document_start 此段代码才会生效

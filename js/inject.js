@@ -4,8 +4,8 @@ var my_overlap_works = new Set();
 var my_overlapped_works = new Set();
 var main_work_id = null;
 var is_unreaded = false;
-var WORK_ID_REGULAR = /[RVBJ]{2}[0-9]{3,6}/;
-var WORK_ID_REGULAR_ALL = /[RVBJ]{2}[0-9]{3,6}/g;
+var WORK_ID_REGULAR = /[RVBJ]{2}[0-9]{3,8}/;
+var WORK_ID_REGULAR_ALL = /[RVBJ]{2}[0-9]{3,8}/g;
 
 window.onload = function () {
     main_work_id = GetFileName(window.location.href);
