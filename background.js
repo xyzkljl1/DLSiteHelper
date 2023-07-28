@@ -34,13 +34,19 @@ async function Init() {
         overlap_items[key] = new Set(overlap_items[key]);
     console.log("DB Sync Done 2,Record:", Object.keys(overlap_items).length);    
 }
+
 //有xxx/RJxxx.html和xxx/RJxxx两种格式的网址
-//同样的代码在不同的js里都出现了,目前不知道有什么好的方法解决
+//有时会在后面出现如/?locale=ja_JP
+//同样的代码在不同的js里都出现了，目前不知道有什么好的方法解决
 function GetFileName(path) {
-    var ret = path.substring(path.lastIndexOf("/") + 1);
-    if (ret.lastIndexOf(".") > 0)
-        ret = ret.substring(0, ret.lastIndexOf("."));
-    return ret;
+    var tmp = path.split("/").reverse();
+    for (let item of tmp) {
+        var ret = item;
+        ret = WORK_ID_REGULAR.exec(ret);
+        if (ret)
+            return ret[0];
+    }
+    return "";
 }
 //放在外面的代码会在每次重启serveice_work时都执行一次
 chrome.runtime.onInstalled.addListener(() => {
