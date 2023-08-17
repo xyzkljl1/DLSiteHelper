@@ -96,6 +96,7 @@ chrome.runtime.onMessage.addListener(async function (request, sender, sendRespon
             for (let item of overlap_items[key])
                 if (item == request.code)
                     overlapped.push(key);
+        //如果service worker不能保持常时运行，导致查询请求在service worker初始化完成之前，就会在此处报错
         sendResponse({ "db": tmp, "overlap": overlap_items[request.code] ? Array.from(overlap_items[request.code]).join(" ") : "", "overlapped": overlapped.join(" ")});
     }
     else if (request.cmd == "markEliminated" || request.cmd == "markSpecialEliminated") {
@@ -234,7 +235,7 @@ keepAlive();
 chrome.runtime.onConnect.addListener(port => {
     if (port.name === 'keepAlive') {
         lifeline = port;
-        setTimeout(keepAliveForced, 295e3); // 5 minutes minus 5 seconds
+        setTimeout(keepAliveForced, 25e3); // 25sec，如果30秒没有新事件service worker就会关闭 #https://developer.chrome.com/blog/longer-esw-lifetimes/
         port.onDisconnect.addListener(keepAliveForced);
     }
 });
