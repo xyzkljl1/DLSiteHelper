@@ -423,10 +423,18 @@ function ReplaceCartRecommendItem() {
     //但是由于这个列表的子项不会在滑动时变化，所以用ReplaceRecommendAndSearchItem的方式隐藏效果更好
 //    for (let item of list_item.getElementsByClassName("work_ncol")) {
     for (let item of list_item.getElementsByClassName("n_work_list_item swiper-slide _recommend_swiper_slide")) {
+        //有两种格式
         var sub_item = item.getElementsByClassName("swiper-slide")[0];
-        var id = sub_item.getAttribute("data-prod");
-        if (!IsItemValid(id)) 
+        var id = "";
+        if (sub_item) 
+            id = sub_item.getAttribute("data-prod");
+        else {
+            sub_item = item.getElementsByClassName("work_ncol")[0];
+            id = sub_item.getAttribute("data-workno");
+        }
+        if (!IsItemValid(id))
             SetLabelDisplayFalse(item);
+
     }
 }
 
