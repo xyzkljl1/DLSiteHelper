@@ -228,14 +228,20 @@ async function StartDownload() {
         console.log("Download Fail.");
 }
 
-let lifeline;
 console.log("Service Worker Start keep alive loop");
+// 25sec，如果30秒没有新事件service worker就会关闭 #https://developer.chrome.com/blog/longer-esw-lifetimes/
+// calling any asynchronous chrome API keeps the worker running for 30 seconds more #https://stackoverflow.com/questions/66618136/persistent-service-worker-in-chrome-extension
+const keepAlive = () => setInterval(chrome.runtime.getPlatformInfo, 25e3);
+chrome.runtime.onStartup.addListener(keepAlive);
+keepAlive();
+/*
+let lifeline;
 keepAlive();
 //防止service worker自己关闭
 chrome.runtime.onConnect.addListener(port => {
-    if (port.name === 'keepAlive') {
+    if (port.name === 'keepAliveDL') {
         lifeline = port;
-        setTimeout(keepAliveForced, 25e3); // 25sec，如果30秒没有新事件service worker就会关闭 #https://developer.chrome.com/blog/longer-esw-lifetimes/
+        setTimeout(keepAliveForced, 25e3); 
         port.onDisconnect.addListener(keepAliveForced);
     }
 });
@@ -245,25 +251,24 @@ function keepAliveForced() {
     lifeline = null;
     keepAlive();
 }
-
-async function keepAlive() {
-    if (lifeline) return;
-    for (const tab of await chrome.tabs.query({ url: '*://*/*' })) {
-        try {
-            await chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                function: () => chrome.runtime.connect({ name: 'keepAlive' }),
-                // `function` will become `func` in Chrome 93+
-            });
-            chrome.tabs.onUpdated.removeListener(retryOnTabUpdate);
-            return;
-        } catch (e) { }
-    }
-    chrome.tabs.onUpdated.addListener(retryOnTabUpdate);
-}
-
 async function retryOnTabUpdate(tabId, info, tab) {
     if (info.url && /^(file|https?):/.test(info.url)) {
         keepAlive();
     }
 }
+*/
+//async function keepAlive() {
+//    if (lifeline) return;
+//      for (const tab of await chrome.tabs.query({ url: '*://*/*' })) {
+//        try {
+//            await chrome.scripting.executeScript({
+//                target: { tabId: tab.id },
+//                function: () => chrome.runtime.connect({ name: 'keepAliveDL' }),
+//            });
+//            chrome.tabs.onUpdated.removeListener(retryOnTabUpdate);
+//            return;
+//        } catch (e) { }
+//    }
+//    chrome.tabs.onUpdated.addListener(retryOnTabUpdate);
+//}
+
