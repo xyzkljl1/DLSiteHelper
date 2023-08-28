@@ -6,7 +6,13 @@ console.log('ContentScript Begin');
 document.addEventListener('DOMContentLoaded', DoInject);
 function DoInject() {
     //购入履历页面全都是已购买没有必要注入
-    if (window.location.href == "https://www.dlsite.com/home/mypage/userbuy")
+    if (window.location.href.endsWith("mypage/userbuy"))
+        return;
+    //购买结算页面不需要侏儒
+    if (window.location.href.includes("download/productlist"))
+        return;
+    //防止信用卡支付界面被影响导致无法支付（https://www.dlsite.com/index.php)
+    if (window.location.href.endsWith("index.php"))
         return;
     // 注入自定义JS
     injectCustomJs();
