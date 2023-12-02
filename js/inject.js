@@ -290,7 +290,8 @@ function RefreshPanel() {
             for (let text of text_list)
                 if (WORK_ID_REGULAR_ALL.test(text))
                     for (let sub_id of text.match(WORK_ID_REGULAR_ALL))
-                        ret.set(sub_id,"");
+                        if (sub_id != main_work_id)
+                            ret.set(sub_id,"");
         }
         {//其它语言版本
             for (let item of document.getElementsByClassName("work_edition_linklist_item"))
