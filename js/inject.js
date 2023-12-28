@@ -285,6 +285,8 @@ function RefreshPanel() {
             var text_list = [];
             for (let area of document.getElementsByClassName("work_parts_area"))
                 text_list.push(area.innerText);
+            for (let area of document.getElementsByClassName("work_parts_heading"))//如RJ437365
+                text_list.push(area.innerText);
             for (let area of document.getElementsByClassName("work_article work_story"))
                 text_list.push(area.innerText);
             for (let text of text_list)
