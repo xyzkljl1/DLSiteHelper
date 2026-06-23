@@ -6,6 +6,7 @@ var cart_items = new Set();
 var bought_items = new Set();
 var WORK_ID_REGULAR = /[RVBJ]{2}[0-9]{3,8}/;
 var WORK_ID_REGULAR_ALL = /[RVBJ]{2}[0-9]{3,8}/g;
+var DOWNLOAD_COOKIE_REFRESH_TIMEOUT = 1500;
 console.log("Service Worker Start");
 Init();
 UpdateCartItems();
@@ -192,35 +193,89 @@ function UpdateBoughtItems(need_download) {
                 body: tmp
             }).then(function (result) {
                 if (result.ok)
-                    StartDownload();
+                    PrepareDownloadAndStartDownload();
                 else
                     console.log("Can't UpdateBoughtItems");
             });
     });
 }
 //向本地服务器发送下载请求
-async function StartDownload() {
-    //先下载一次刷新cookie?不知道有没有用
-    Promise.race([
-        new Promise((resolve, reject) => { setTimeout(resolve, 1500, 'head timeout,ignore'); }),
-        fetch('https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html', {
-        //url:'https://ssl.dlsite.com/maniax/mypage',
-        //url:'https://download.dlsite.com/get/=/type/work/domain/doujin/dir/RJ299000/file/RJ298231.part1.exe/_/20200903152647',
-        method: "HEAD",
-        headers: { 'Cache-Control': 'no-cache' }
-        }
-    )]);
-    //chrome.cookies.getAll({ "url": "https://download.dlsite.com/get/=/type/work/domain/doujin/dir/RJ299000/file/RJ298231.part2.rar/_/20200903152755" }, function (cookies) {
-    var cookies=await chrome.cookies.getAll({ "url": "https://www.dlsite.com/maniax/download/=/product_id/RJ258916.html" });
+function GetDownloadPageUrl(work_id) {
+    return "https://www.dlsite.com/maniax/download/=/product_id/" + work_id + ".html";
+}
+
+async function RefreshDownloadCookie(work_id) {
+    var controller = new AbortController();
+    var timer = setTimeout(function () { controller.abort(); }, DOWNLOAD_COOKIE_REFRESH_TIMEOUT);
+    try {
+        var refresh_result = await fetch(GetDownloadPageUrl(work_id), {
+            method: "HEAD",
+            headers: { 'Cache-Control': 'no-cache' },
+            credentials: "include",
+            signal: controller.signal
+        });
+        console.log("Refresh Cookie Done", work_id, refresh_result.status);
+    }
+    catch (e) {
+        console.log("Refresh Cookie Fail,ignore", work_id, e);
+    }
+    finally {
+        clearTimeout(timer);
+    }
+}
+
+async function GetDownloadCookieString(work_id) {
+    var url = GetDownloadPageUrl(work_id);
     var ret = "";
-    for (let cookie of cookies)
+    var cookies = await chrome.cookies.getAll({ "url": url });
+    for (let cookie of cookies) {
         ret += cookie.name + "=" + cookie.value + "; ";
+    }
+    return ret;
+}
+
+async function PrepareDownloadAndStartDownload() {
+    var result = await fetch('http://127.0.0.1:4567?Download', {
+        method: "POST",
+        headers: {
+            'Cache-Control': 'no-cache',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ "stage": "query" })
+    });
+    if (!result.ok) {
+        console.log("Can't Prepare Download");
+        return;
+    }
+    var text = await result.text();
+    var work_list = text.split(" ").filter(function (work) { return WORK_ID_REGULAR.test(work); });
+    await StartDownload(work_list);
+}
+
+async function StartDownload(work_list) {
+    var download_cookies = [];
+    if (!work_list || work_list.length == 0) {
+        console.log("No Download Items");
+        return;
+    }
+    for (let work of work_list) {
+        if (!WORK_ID_REGULAR.test(work))
+            continue;
+        await RefreshDownloadCookie(work);
+        download_cookies.push({
+            "id": work,
+            "cookies": await GetDownloadCookieString(work)
+        });
+    }
+    var ret = JSON.stringify({ "items": download_cookies });
     console.log("Trying to Start Download,this may take few minutes.");
     var res = await fetch('http://127.0.0.1:4567?Download', {
         method: "POST",
-        headers: { 'Cache-Control': 'no-cache' },
-        body: ret,
-        //无需手动设置user-agent,本来就会带上
+        headers: {
+            'Cache-Control': 'no-cache',
+            'Content-Type': 'application/json'
+        },
+        body: ret
     });
     if(res.ok)
         console.log("Download Begin " + res.text());
